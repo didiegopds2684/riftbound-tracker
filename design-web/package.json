@@ -1,0 +1,26 @@
+{
+  "name": "riftbound-tracker-design",
+  "version": "1.0.0",
+  "private": true,
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@storybook/addon-essentials": "^8.3.6",
+    "@storybook/addon-interactions": "^8.3.6",
+    "@storybook/blocks": "^8.3.6",
+    "@storybook/react": "^8.3.6",
+    "@storybook/react-vite": "^8.3.6",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.1",
+    "storybook": "^8.3.6",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}

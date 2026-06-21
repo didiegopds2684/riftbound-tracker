@@ -1,0 +1,26 @@
+{
+  "projectId": "b75cfbe6-7b73-42df-9681-10fc1af2ff6d",
+  "pkg": "riftbound-tracker-design",
+  "globalName": "RiftboundDesign",
+  "shape": "storybook",
+  "storybookStatic": ".design-sync/sb-reference",
+  "storybookConfigDir": ".storybook",
+  "entry": "./src/index.ts",
+  "cssEntry": "./src/global.css",
+  "buildCmd": "npx tsc -p tsconfig.declarations.json",
+  "titleMap": {
+    "Auth": "AuthScreen",
+    "AppCompleto": "FullApp",
+    "Legends": "LegendsScreen",
+    "Placar": "MatchCounterScreen",
+    "Partidas": "MatchesScreen",
+    "NovaPartida": "NewMatchScreen",
+    "Perfil": "ProfileScreen",
+    "Button": "Button",
+    "FormField": "FormField",
+    "LegendAvatar": "LegendAvatar",
+    "LegendPicker": "LegendPicker",
+    "ResultBadge": "ResultBadge",
+    "SegmentControl": "SegmentControl"
+  }
+}

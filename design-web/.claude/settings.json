@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node .ds-sync/package-build.mjs *)",
+      "Bash(node .ds-sync/package-validate.mjs *)",
+      "Bash(node .ds-sync/storybook/compare.mjs *)",
+      "Bash(node .ds-sync/lib/preview-rebuild.mjs *)",
+      "Bash(node .ds-sync/resync.mjs *)",
+      "Bash(npx storybook build *)",
+      "Bash(npx tsc *)",
+      "Bash(mkdir -p *)",
+      "Bash(cp -r *)",
+      "Bash(npm i *)"
+    ]
+  }
+}
