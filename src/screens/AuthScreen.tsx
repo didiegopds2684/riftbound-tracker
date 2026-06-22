@@ -46,7 +46,7 @@ export function AuthScreen() {
       }
       const err = await signUp(email, password, name.trim(), nickname.trim());
       if (err) setError(err);
-      else setMessage('Confirme seu email para ativar a conta!');
+      else setMessage('Conta criada! Você será conectado em instantes.');
     } else {
       const err = await resetPassword(email);
       if (err) setError(err);

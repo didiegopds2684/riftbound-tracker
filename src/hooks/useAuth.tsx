@@ -54,15 +54,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   async function signUp(email: string, password: string, name: string, nickname: string) {
     const { data, error } = await supabase.auth.signUp({ email, password });
     if (error) return error.message;
-    if (data.user) {
-      const { error: profileError } = await supabase.from('profiles').insert({
-        id: data.user.id,
-        name,
-        nickname,
-        favorite_champion_id: null,
-      });
-      if (profileError) return profileError.message;
-    }
+
+    const userId = data.user?.id;
+    if (!userId) return null; // confirmation required — profile created after email verify
+
+    const { error: profileError } = await supabase.from('profiles').insert({
+      id: userId,
+      name,
+      nickname,
+      favorite_champion_id: null,
+    });
+    if (profileError && profileError.code !== '23505') return profileError.message; // ignore duplicate
+
+    // If a session was returned, email confirmation is disabled — onAuthStateChange handles redirect
     return null;
   }
 
