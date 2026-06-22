@@ -1,0 +1,9 @@
+/* ===========================================================================
+   Riftbound Tracker — Webfonts
+   SUBSTITUTION: Riot's licensed "Beaufort for LOL" (display) and "Spiegel"
+   (body) are proprietary. Cinzel + Barlow are the closest free matches and
+   carry the same elegant-serif-caps / humanist-sans pairing. Replace with the
+   licensed faces for production builds.
+   =========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap');

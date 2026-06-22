@@ -1,0 +1,25 @@
+import { ReactNode, CSSProperties } from 'react';
+
+/**
+ * Primary action button for Riftbound Tracker. Gold fill by default; the `cyan`
+ * variant glows like lit mana for the single hero/active action on a screen.
+ *
+ * @startingPoint section="Core" subtitle="Gold / cyan / secondary action button" viewport="700x180"
+ */
+export interface ButtonProps {
+  /** Text label (alternative to children). */
+  label?: string;
+  children?: ReactNode;
+  onClick?: () => void;
+  /** Visual style. `cyan` is the glowing mana action. */
+  variant?: 'primary' | 'cyan' | 'secondary' | 'danger' | 'ghost';
+  size?: 'sm' | 'md' | 'lg';
+  loading?: boolean;
+  disabled?: boolean;
+  fullWidth?: boolean;
+  /** Optional leading icon node. */
+  icon?: ReactNode;
+  style?: CSSProperties;
+}
+
+export function Button(props: ButtonProps): JSX.Element;

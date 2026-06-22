@@ -1,0 +1,19 @@
+/** A single segment option. */
+export interface SegmentOption {
+  value: string;
+  label: string;
+}
+
+/**
+ * Segmented toggle for short mutually-exclusive choices (match mode, format).
+ * The active segment is gold-tinted.
+ */
+export interface SegmentControlProps {
+  /** Optional uppercase overline label. */
+  label?: string;
+  options: SegmentOption[];
+  value: string;
+  onChange: (value: string) => void;
+}
+
+export function SegmentControl(props: SegmentControlProps): JSX.Element;

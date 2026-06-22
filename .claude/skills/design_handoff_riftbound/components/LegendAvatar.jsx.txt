@@ -1,0 +1,68 @@
+import React, { useState } from 'react';
+
+const DOMAIN_COLORS = {
+  Body: 'var(--domain-body)',
+  Calm: 'var(--domain-calm)',
+  Chaos: 'var(--domain-chaos)',
+  Fury: 'var(--domain-fury)',
+  Mind: 'var(--domain-mind)',
+  Order: 'var(--domain-order)',
+  Colorless: 'var(--domain-colorless)',
+};
+
+/**
+ * Circular Legend (champion) avatar with a domain-colored ring. Falls back to
+ * the Legend's initial when the splash image is missing. Optional gold favorite
+ * star and a name caption.
+ */
+export function LegendAvatar({ legend, size = 48, showName = false, favorite = false }) {
+  const [imgError, setImgError] = useState(false);
+  const ring = DOMAIN_COLORS[legend?.domain] ?? 'var(--border-strong)';
+  const star = Math.max(14, size * 0.3);
+
+  return (
+    <div style={{ display: 'inline-flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <div style={{
+          width: size, height: size, borderRadius: '50%',
+          border: `2px solid ${ring}`,
+          overflow: 'hidden',
+          background: 'var(--surface-elevated)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          {legend?.image_url && !imgError ? (
+            <img
+              src={legend.image_url}
+              alt={legend.name}
+              onError={() => setImgError(true)}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
+            />
+          ) : (
+            <span style={{ fontFamily: 'var(--font-display)', fontSize: size * 0.42, fontWeight: 700, color: 'var(--text-secondary)' }}>
+              {legend?.name?.[0] ?? '?'}
+            </span>
+          )}
+        </div>
+        {favorite && (
+          <span style={{
+            position: 'absolute', bottom: -2, right: -2,
+            width: star, height: star, borderRadius: '50%',
+            background: 'var(--gold)', color: 'var(--text-on-gold)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: star * 0.62, lineHeight: 1,
+            border: '2px solid var(--bg)',
+          }}>★</span>
+        )}
+      </div>
+      {showName && legend && (
+        <span style={{
+          fontSize: 11, color: 'var(--text-secondary)', textAlign: 'center',
+          maxWidth: Math.max(56, size + 16),
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        }}>
+          {legend.name}
+        </span>
+      )}
+    </div>
+  );
+}

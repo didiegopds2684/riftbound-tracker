@@ -3,88 +3,209 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Image } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useChampions } from '../hooks/useChampions';
 import { useMatches } from '../hooks/useMatches';
-import { colors, radius, spacing, typography } from '../lib/theme';
+import { useAuth } from '../hooks/useAuth';
+import { colors, fonts, radius, spacing, typography } from '../lib/theme';
 import { ChampionAvatar } from '../components/ChampionAvatar';
-import { ResultBadge } from '../components/ResultBadge';
-import { ChampionStats } from '../types';
+import { KpiCard } from '../components/KpiCard';
+import { MatchupBar } from '../components/MatchupBar';
+import { Champion, ChampionStats } from '../types';
 
-interface ChampionDetailModalProps {
-  stats: ChampionStats;
-  onClose: () => void;
-  allStats: ChampionStats[];
-  opponentStats: { champion: ChampionStats['champion']; wins: number; total: number }[];
+const DOMAIN_COLORS: Record<string, string> = {
+  Body:      colors.domainBody,
+  Calm:      colors.domainCalm,
+  Chaos:     colors.domainChaos,
+  Fury:      colors.domainFury,
+  Mind:      colors.domainMind,
+  Order:     colors.domainOrder,
+  Colorless: colors.domainColorless,
+};
+
+interface OpponentStat {
+  champion: Champion;
+  wins: number;
+  losses: number;
+  draws: number;
+  total: number;
 }
 
-function StatRow({ label, value }: { label: string; value: string | number }) {
+interface DetailProps {
+  stats: ChampionStats;
+  isFavorite: boolean;
+  opponentStats: OpponentStat[];
+  onClose: () => void;
+}
+
+function MatchupSection({
+  title,
+  accent,
+  rows,
+}: {
+  title: string;
+  accent: string;
+  rows: OpponentStat[];
+}) {
   return (
-    <View style={detailStyles.statRow}>
-      <Text style={detailStyles.statLabel}>{label}</Text>
-      <Text style={detailStyles.statValue}>{value}</Text>
+    <View style={detailStyles.matchupCard}>
+      <View style={detailStyles.matchupHeader}>
+        <View style={[detailStyles.accentBar, { backgroundColor: accent }]} />
+        <Text style={detailStyles.matchupTitle}>{title}</Text>
+      </View>
+      {rows.map((r) => (
+        <MatchupBar
+          key={r.champion.id}
+          champion={r.champion}
+          wins={r.wins}
+          losses={r.losses}
+          draws={r.draws}
+          total={r.total}
+        />
+      ))}
     </View>
   );
 }
 
-function ChampionDetailView({ stats, onClose, opponentStats }: ChampionDetailModalProps) {
+function ChampionDetailView({ stats, isFavorite, opponentStats, onClose }: DetailProps) {
+  const insets = useSafeAreaInsets();
+  const domainColor = DOMAIN_COLORS[stats.champion.domain] ?? colors.gold;
+  const winRate = stats.total > 0 ? Math.round((stats.wins / stats.total) * 100) : 0;
+
+  const ranked = [...opponentStats]
+    .map((o) => ({ ...o, wr: o.total > 0 ? o.wins / o.total : 0 }))
+    .sort((a, b) => b.wr - a.wr);
+  const advantages  = ranked.slice(0, 3);
+  const challenges  = [...ranked].reverse().slice(0, 3);
+
   return (
-    <View style={detailStyles.container}>
-      <View style={detailStyles.header}>
-        <Pressable onPress={onClose} style={detailStyles.backBtn}>
-          <Text style={detailStyles.backText}>← Voltar</Text>
-        </Pressable>
-      </View>
+    <View style={detailStyles.root}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        {/* ── Hero header ── */}
+        <View style={detailStyles.hero}>
+          {stats.champion.image_url ? (
+            <Image
+              source={{ uri: stats.champion.image_url }}
+              style={detailStyles.heroImage}
+              resizeMode="cover"
+            />
+          ) : null}
 
-      <View style={detailStyles.heroRow}>
-        <ChampionAvatar champion={stats.champion} size={72} />
-        <View>
-          <Text style={typography.h2}>{stats.champion.name}</Text>
-          <Text style={detailStyles.domain}>{stats.champion.domain}</Text>
-        </View>
-      </View>
+          <LinearGradient
+            colors={[
+              'rgba(1,10,21,0.35)',
+              'rgba(1,10,21,0.05)',
+              'rgba(1,10,21,0.85)',
+              '#010a15',
+            ]}
+            locations={[0, 0.35, 0.8, 1]}
+            style={StyleSheet.absoluteFill}
+          />
 
-      <View style={detailStyles.card}>
-        <Text style={detailStyles.cardTitle}>Estatísticas gerais</Text>
-        <StatRow label="Total de partidas" value={stats.total} />
-        <StatRow label="Vitórias" value={stats.wins} />
-        <StatRow label="Derrotas" value={stats.losses} />
-        <StatRow label="Empates" value={stats.draws} />
-        <StatRow label="Taxa de vitória" value={`${stats.winRate.toFixed(1)}%`} />
-      </View>
+          {/* domain hairline */}
+          <View style={[detailStyles.domainLine, { backgroundColor: domainColor }]} />
 
-      {opponentStats.length > 0 && (
-        <View style={detailStyles.card}>
-          <Text style={detailStyles.cardTitle}>Confrontos por oponente</Text>
-          {opponentStats.map((op) => {
-            const wr = op.total > 0 ? (op.wins / op.total) * 100 : 0;
-            return (
-              <View key={op.champion.id} style={detailStyles.opponentRow}>
-                <ChampionAvatar champion={op.champion} size={36} />
-                <View style={{ flex: 1 }}>
-                  <Text style={detailStyles.opponentName}>{op.champion.name}</Text>
-                  <Text style={detailStyles.opponentSub}>{op.wins}V / {op.total - op.wins}D em {op.total} partidas</Text>
+          {/* back button — top accounts for Dynamic Island / notch */}
+          <Pressable style={[detailStyles.backBtn, { top: insets.top + 8 }]} onPress={onClose}>
+            <Text style={detailStyles.backBtnText}>←</Text>
+          </Pressable>
+
+          {/* bottom overlay: domain pill + name */}
+          <View style={detailStyles.heroBottom}>
+            <View style={detailStyles.pills}>
+              <View style={[detailStyles.domainPill, { borderColor: domainColor }]}>
+                <View style={[detailStyles.domainDot, { backgroundColor: domainColor }]} />
+                <Text style={detailStyles.domainLabel}>{stats.champion.domain.toUpperCase()}</Text>
+              </View>
+              {isFavorite && (
+                <View style={detailStyles.favBadge}>
+                  <Text style={detailStyles.favBadgeText}>★ Favorito</Text>
                 </View>
-                <Text style={[detailStyles.wr, { color: wr >= 50 ? colors.win : colors.loss }]}>
-                  {wr.toFixed(0)}%
+              )}
+            </View>
+            <Text style={detailStyles.heroName}>{stats.champion.name}</Text>
+          </View>
+        </View>
+
+        {/* ── KPI grid ── */}
+        <View style={detailStyles.body}>
+          <View style={detailStyles.kpiRow}>
+            <KpiCard
+              label="Win Rate"
+              value={`${winRate}%`}
+              sub={`${stats.wins}V / ${stats.losses}D / ${stats.draws}E`}
+              accent={winRate >= 50 ? 'win' : 'loss'}
+            />
+            <KpiCard
+              label="Partidas"
+              value={stats.total}
+              sub="registradas"
+              accent="gold"
+            />
+          </View>
+          <View style={detailStyles.kpiRow}>
+            <KpiCard
+              label="Vitórias"
+              value={stats.wins}
+              sub="jogos ganhos"
+              accent="win"
+            />
+            <KpiCard
+              label="Derrotas"
+              value={stats.losses}
+              sub="jogos perdidos"
+              accent="loss"
+            />
+          </View>
+
+          {/* ── Matchups ── */}
+          {opponentStats.length > 0 && (
+            <>
+              <View style={detailStyles.sectionHeader}>
+                <Text style={detailStyles.sectionTitle}>Matchups</Text>
+                <Text style={detailStyles.sectionSub}>
+                  Seu desempenho contra cada Legend rival
                 </Text>
               </View>
-            );
-          })}
+
+              {advantages.length > 0 && (
+                <MatchupSection
+                  title="Top Vantagens"
+                  accent={colors.win}
+                  rows={advantages}
+                />
+              )}
+              {challenges.length > 0 && (
+                <MatchupSection
+                  title="Principais Desafios"
+                  accent={colors.loss}
+                  rows={challenges}
+                />
+              )}
+            </>
+          )}
+
+          <View style={{ height: spacing.xl }} />
         </View>
-      )}
+      </ScrollView>
     </View>
   );
 }
 
 export function ChampionsScreen() {
+  const insets = useSafeAreaInsets();
   const { champions, loading: champsLoading } = useChampions();
   const { matches, loading: matchesLoading } = useMatches();
-  const [search, setSearch] = useState('');
+  const { profile } = useAuth();
+  const [search, setSearch]     = useState('');
   const [selected, setSelected] = useState<ChampionStats | null>(null);
 
   const statsMap = useMemo(() => {
@@ -92,9 +213,9 @@ export function ChampionsScreen() {
     for (const m of matches) {
       const prev = map.get(m.my_champion_id) ?? { wins: 0, losses: 0, draws: 0 };
       map.set(m.my_champion_id, {
-        wins: prev.wins + (m.final_result === 'win' ? 1 : 0),
+        wins:   prev.wins   + (m.final_result === 'win'  ? 1 : 0),
         losses: prev.losses + (m.final_result === 'loss' ? 1 : 0),
-        draws: prev.draws + (m.final_result === 'draw' ? 1 : 0),
+        draws:  prev.draws  + (m.final_result === 'draw' ? 1 : 0),
       });
     }
     return map;
@@ -104,35 +225,46 @@ export function ChampionsScreen() {
     const played = Array.from(statsMap.entries()).map(([id, s]) => {
       const champion = champions.find((c) => c.id === id);
       if (!champion) return null;
-      const total = s.wins + s.losses + s.draws;
+      const total   = s.wins + s.losses + s.draws;
       const winRate = total > 0 ? (s.wins / total) * 100 : 0;
       return { champion, ...s, total, winRate, isMostPlayed: false } as ChampionStats;
     }).filter(Boolean) as ChampionStats[];
 
     if (played.length === 0) return played;
     const maxPlayed = Math.max(...played.map((s) => s.total));
-    return played.map((s) => ({ ...s, isMostPlayed: s.total === maxPlayed }))
+    return played
+      .map((s) => ({ ...s, isMostPlayed: s.total === maxPlayed }))
       .sort((a, b) => b.total - a.total);
   }, [statsMap, champions]);
 
-  const opponentStatsForSelected = useMemo(() => {
+  const opponentStatsForSelected = useMemo((): OpponentStat[] => {
     if (!selected) return [];
-    const myMatchesWithChamp = matches.filter((m) => m.my_champion_id === selected.champion.id);
-    const oppMap = new Map<string, { wins: number; total: number }>();
-    for (const m of myMatchesWithChamp) {
+    const myMatches = matches.filter((m) => m.my_champion_id === selected.champion.id);
+    const oppMap = new Map<string, { wins: number; draws: number; total: number }>();
+    for (const m of myMatches) {
       for (const oppId of m.opponent_champion_ids) {
-        const prev = oppMap.get(oppId) ?? { wins: 0, total: 0 };
+        const prev = oppMap.get(oppId) ?? { wins: 0, draws: 0, total: 0 };
         oppMap.set(oppId, {
-          wins: prev.wins + (m.final_result === 'win' ? 1 : 0),
+          wins:  prev.wins  + (m.final_result === 'win'  ? 1 : 0),
+          draws: prev.draws + (m.final_result === 'draw' ? 1 : 0),
           total: prev.total + 1,
         });
       }
     }
-    return Array.from(oppMap.entries()).map(([id, s]) => {
-      const champion = champions.find((c) => c.id === id);
-      if (!champion) return null;
-      return { champion, ...s };
-    }).filter(Boolean).sort((a, b) => b!.total - a!.total) as { champion: ChampionStats['champion']; wins: number; total: number }[];
+    return Array.from(oppMap.entries())
+      .map(([id, s]) => {
+        const champion = champions.find((c) => c.id === id);
+        if (!champion) return null;
+        return {
+          champion,
+          wins:   s.wins,
+          draws:  s.draws,
+          losses: s.total - s.wins - s.draws,
+          total:  s.total,
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b!.total - a!.total) as OpponentStat[];
   }, [selected, matches, champions]);
 
   const filtered = useMemo(
@@ -146,21 +278,24 @@ export function ChampionsScreen() {
     return (
       <ChampionDetailView
         stats={selected}
-        onClose={() => setSelected(null)}
-        allStats={allStats}
+        isFavorite={profile?.favorite_champion_id === selected.champion.id}
         opponentStats={opponentStatsForSelected}
+        onClose={() => setSelected(null)}
       />
     );
   }
 
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { paddingTop: insets.top }]}>
       <Text style={styles.title}>Legends</Text>
+
       {loading ? (
-        <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.xl }} />
+        <ActivityIndicator color={colors.cyan} style={{ marginTop: spacing.xl }} />
       ) : allStats.length === 0 ? (
         <View style={styles.empty}>
-          <Text style={styles.emptyText}>Nenhuma Legend registrada ainda.{'\n'}Registre sua primeira partida!</Text>
+          <Text style={styles.emptyText}>
+            Nenhuma Legend registrada ainda.{'\n'}Registre sua primeira partida!
+          </Text>
         </View>
       ) : (
         <>
@@ -176,23 +311,35 @@ export function ChampionsScreen() {
             keyExtractor={(item) => item.champion.id}
             contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}
             renderItem={({ item }) => (
-              <Pressable style={styles.card} onPress={() => setSelected(item)}>
-                <ChampionAvatar champion={item.champion} size={52} />
+              <Pressable
+                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                onPress={() => setSelected(item)}
+              >
+                <ChampionAvatar
+                  champion={item.champion}
+                  size={52}
+                  favorite={item.champion.id === profile?.favorite_champion_id}
+                />
                 <View style={{ flex: 1 }}>
                   <View style={styles.nameRow}>
                     <Text style={styles.name}>{item.champion.name}</Text>
                     {item.isMostPlayed && (
                       <View style={styles.badge}>
-                        <Text style={styles.badgeText}>Mais jogado</Text>
+                        <Text style={styles.badgeText}>Mais jogada</Text>
                       </View>
                     )}
                   </View>
                   <Text style={styles.sub}>
-                    {item.wins}V / {item.losses}D / {item.draws}E — {item.total} partidas
+                    {item.wins}V / {item.losses}D / {item.draws}E · {item.total} partidas
                   </Text>
                 </View>
-                <View style={styles.wr}>
-                  <Text style={[styles.wrText, { color: item.winRate >= 50 ? colors.win : colors.loss }]}>
+                <View style={styles.wrBlock}>
+                  <Text
+                    style={[
+                      styles.wrText,
+                      { color: item.winRate >= 50 ? colors.win : colors.loss },
+                    ]}
+                  >
                     {item.winRate.toFixed(0)}%
                   </Text>
                   <Text style={styles.wrLabel}>winrate</Text>
@@ -206,14 +353,19 @@ export function ChampionsScreen() {
   );
 }
 
+// ── List styles ──────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  title: { ...typography.h1, padding: spacing.lg, paddingBottom: spacing.sm },
+  title: {
+    ...typography.h1,
+    padding: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
   empty: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl },
   emptyText: { color: colors.textSecondary, textAlign: 'center', lineHeight: 22, fontSize: 15 },
   search: {
-    margin: spacing.md,
-    marginTop: 0,
+    marginHorizontal: spacing.md,
+    marginBottom: spacing.sm,
     backgroundColor: colors.surfaceElevated,
     borderRadius: radius.md,
     padding: spacing.md,
@@ -232,55 +384,136 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  cardPressed: { borderColor: colors.borderStrong, backgroundColor: colors.surfaceElevated },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, flexWrap: 'wrap' },
   name: { ...typography.body, fontWeight: '600' },
   sub: { ...typography.bodySmall, marginTop: 2 },
   badge: {
-    backgroundColor: colors.primary + '22',
+    backgroundColor: colors.gold + '22',
     borderRadius: radius.full,
     paddingHorizontal: 8,
     paddingVertical: 2,
+    borderWidth: 1,
+    borderColor: colors.gold,
   },
-  badgeText: { color: colors.primary, fontSize: 10, fontWeight: '700' },
-  wr: { alignItems: 'center' },
-  wrText: { fontSize: 20, fontWeight: '700' },
+  badgeText: { color: colors.gold, fontSize: 10, fontWeight: '700' },
+  wrBlock: { alignItems: 'center' },
+  wrText: { fontSize: 20, fontWeight: '700', fontFamily: fonts.display },
   wrLabel: { ...typography.caption },
 });
 
+// ── Detail styles ─────────────────────────────────────────────────────────────
 const detailStyles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: { padding: spacing.md, paddingTop: spacing.xl },
-  backBtn: { alignSelf: 'flex-start' },
-  backText: { color: colors.primary, fontSize: 16 },
-  heroRow: {
+  root: { flex: 1, backgroundColor: colors.background },
+  hero: {
+    height: 300,
+    overflow: 'hidden',
+    position: 'relative',
+    justifyContent: 'flex-end',
+  },
+  heroImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 520,
+  },
+  domainLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: 2,
+    opacity: 0.85,
+    zIndex: 2,
+  },
+  backBtn: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: 'rgba(1,10,21,0.55)',
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  backBtnText: { color: colors.textPrimary, fontSize: 18, lineHeight: 22 },
+  heroBottom: {
+    position: 'absolute',
+    left: spacing.lg,
+    right: spacing.lg,
+    bottom: spacing.md,
+    zIndex: 3,
+    gap: spacing.xs,
+  },
+  pills: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  domainPill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
-    padding: spacing.lg,
-    paddingTop: 0,
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    backgroundColor: 'rgba(1,10,21,0.5)',
+    borderWidth: 1,
   },
-  domain: { color: colors.textSecondary, fontSize: 13 },
-  card: {
+  domainDot: { width: 8, height: 8, borderRadius: 4 },
+  domainLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    letterSpacing: 1.4,
+  },
+  favBadge: {
+    backgroundColor: colors.gold + '22',
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: colors.gold,
+  },
+  favBadgeText: { color: colors.gold, fontSize: 11, fontWeight: '700' },
+  heroName: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    fontFamily: fonts.display,
+    letterSpacing: 0.6,
+    textShadowColor: 'rgba(1,10,21,0.9)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 12,
+    lineHeight: 42,
+  },
+  body: { padding: spacing.md, gap: spacing.md },
+  kpiRow: { flexDirection: 'row', gap: spacing.md },
+  sectionHeader: { marginTop: spacing.xs },
+  sectionTitle: {
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    fontFamily: fonts.display,
+    letterSpacing: 0.4,
+  },
+  sectionSub: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
+  matchupCard: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    margin: spacing.md,
-    marginTop: 0,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    gap: spacing.sm,
   },
-  cardTitle: { ...typography.h3, marginBottom: spacing.xs },
-  statRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  statLabel: { color: colors.textSecondary, fontSize: 14 },
-  statValue: { color: colors.textPrimary, fontSize: 14, fontWeight: '600' },
-  opponentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingVertical: spacing.xs,
+  matchupHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  accentBar: { width: 4, height: 16, borderRadius: 2 },
+  matchupTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 1.4,
   },
-  opponentName: { ...typography.body, fontSize: 14 },
-  opponentSub: { ...typography.bodySmall, fontSize: 12 },
-  wr: { fontSize: 16, fontWeight: '700' },
 });

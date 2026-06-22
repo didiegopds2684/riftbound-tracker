@@ -1,0 +1,144 @@
+// Scoreboard / Point Counter (SPEC §6) — face-to-face tabletop counter.
+(function () {
+const { ScoreStepper, SegmentControl, Button } = window.RiftboundTrackerDesignSystem_994af1;
+
+function ScoreboardScreen() {
+  const [phase, setPhase] = React.useState('setup'); // 'setup' | 'play'
+  const [format, setFormat] = React.useState('bo3');
+  const [winTarget, setWinTarget] = React.useState(20);
+  const [p1, setP1] = React.useState(0);
+  const [p2, setP2] = React.useState(0);
+  const [g1, setG1] = React.useState(0);
+  const [g2, setG2] = React.useState(0);
+  const [gameNum, setGameNum] = React.useState(1);
+  const [winner, setWinner] = React.useState(null);
+  const [confirmReset, setConfirmReset] = React.useState(false);
+
+  const maxGames = format === 'bo3' ? 3 : 1;
+  const gamesNeeded = format === 'bo3' ? 2 : 1;
+
+  function add(which) {
+    if (winner) return;
+    const cur = which === 'p1' ? p1 : p2;
+    const setPts = which === 'p1' ? setP1 : setP2;
+    const games = which === 'p1' ? g1 : g2;
+    const setGames = which === 'p1' ? setG1 : setG2;
+    const next = cur + 1;
+    if (next >= winTarget) {
+      const ng = games + 1;
+      setGames(ng);
+      setPts(next);
+      if (ng >= gamesNeeded) { setWinner(which === 'p1' ? 'Você' : 'Oponente'); return; }
+      if (gameNum < maxGames) { setGameNum((g) => g + 1); setP1(0); setP2(0); }
+    } else {
+      setPts(next);
+    }
+  }
+  const sub = (which) => {
+    if (winner) return;
+    (which === 'p1' ? setP1 : setP2)((p) => Math.max(0, p - 1));
+  };
+
+  function reset() {
+    setP1(0); setP2(0); setG1(0); setG2(0); setGameNum(1); setWinner(null); setConfirmReset(false);
+  }
+
+  // ---------- SETUP ----------
+  if (phase === 'setup') {
+    return (
+      <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--sp-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-lg)' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, color: 'var(--text-primary)', letterSpacing: 'var(--ls-display)' }}>Placar</h1>
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)',
+          padding: 'var(--sp-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-lg)',
+        }}>
+          <div style={{ fontSize: 18, fontWeight: 600 }}>Configurar partida</div>
+          <SegmentControl label="Formato" value={format} onChange={setFormat}
+            options={[{ value: 'bo1', label: 'Bo1' }, { value: 'bo3', label: 'Bo3' }]} />
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)', marginBottom: 'var(--sp-sm)' }}>Pontos para vencer</div>
+            <div style={{ display: 'flex', gap: 'var(--sp-xs)' }}>
+              {[15, 20, 25, 30].map((t) => {
+                const on = t === winTarget;
+                return (
+                  <button key={t} onClick={() => setWinTarget(t)} style={{
+                    flex: 1, padding: '12px 0', borderRadius: 'var(--r-md)', fontWeight: 700, fontSize: 16,
+                    fontFamily: 'var(--font-display)',
+                    border: `1px solid ${on ? 'var(--cyan)' : 'var(--border)'}`,
+                    background: on ? '#00bcff22' : 'var(--surface-elevated)',
+                    color: on ? 'var(--cyan)' : 'var(--text-secondary)',
+                    boxShadow: on ? 'var(--glow-cyan)' : 'none',
+                  }}>{t}</button>
+                );
+              })}
+            </div>
+          </div>
+          <Button label="Iniciar Placar" variant="cyan" size="lg" fullWidth onClick={() => { reset(); setPhase('play'); }} />
+        </div>
+        <div style={{ fontSize: 12, color: 'var(--text-muted)', textAlign: 'center', lineHeight: 1.6 }}>
+          Posicione o celular entre os dois jogadores.<br />A metade superior fica de cabeça para baixo para o oponente.
+        </div>
+      </div>
+    );
+  }
+
+  // ---------- PLAY (face-to-face) ----------
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', background: 'var(--bg)' }}>
+      {/* opponent (top, flipped 180°) */}
+      <ScoreStepper name="Oponente" points={p2} winTarget={winTarget} meta={`Games ${g2} · ${g1}`}
+        onAdd={() => add('p2')} onSub={() => sub('p2')} flipped active={!winner} />
+
+      {/* central divider with discreet reset */}
+      <div style={{
+        position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '0 var(--sp-md)', height: 1,
+      }}>
+        <div style={{ position: 'absolute', left: 0, right: 0, height: 1, background: 'linear-gradient(90deg, transparent, var(--gold), transparent)', opacity: 0.6 }} />
+        <button onClick={() => setConfirmReset(true)} style={{
+          position: 'relative', zIndex: 2,
+          display: 'flex', alignItems: 'center', gap: 6,
+          padding: '6px 14px', borderRadius: 'var(--r-full)',
+          background: 'var(--surface)', border: '1px solid var(--gold)',
+          color: 'var(--gold)', fontSize: 12, fontWeight: 700, letterSpacing: '0.04em',
+        }}>↺ Resetar · {gameNum}/{maxGames}</button>
+      </div>
+
+      {/* player (bottom) */}
+      <ScoreStepper name="Você" points={p1} winTarget={winTarget} meta={`Games ${g1} · ${g2}`}
+        onAdd={() => add('p1')} onSub={() => sub('p1')} active={!winner} />
+
+      {/* winner overlay */}
+      {winner && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 10, background: 'rgba(1,10,21,0.82)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-lg)', padding: 'var(--sp-xl)',
+          backdropFilter: 'blur(3px)',
+        }}>
+          <div style={{ fontSize: 52 }}>🏆</div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700, color: 'var(--gold)', textAlign: 'center', letterSpacing: 'var(--ls-display)' }}>{winner} venceu!</div>
+          <Button label="Nova partida" variant="cyan" onClick={reset} />
+          <button onClick={() => { reset(); setPhase('setup'); }} style={{ color: 'var(--text-secondary)', fontSize: 13 }}>Voltar ao setup</button>
+        </div>
+      )}
+
+      {/* reset confirm */}
+      {confirmReset && (
+        <div style={{
+          position: 'absolute', inset: 0, zIndex: 12, background: 'rgba(1,10,21,0.82)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-md)', padding: 'var(--sp-xl)',
+          backdropFilter: 'blur(3px)',
+        }}>
+          <div style={{ fontSize: 17, fontWeight: 600, color: 'var(--text-primary)', textAlign: 'center' }}>Resetar a partida?</div>
+          <div style={{ display: 'flex', gap: 'var(--sp-sm)' }}>
+            <Button label="Cancelar" variant="ghost" onClick={() => setConfirmReset(false)} />
+            <Button label="Resetar" variant="danger" onClick={reset} />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+Object.assign(window, { ScoreboardScreen });
+})();

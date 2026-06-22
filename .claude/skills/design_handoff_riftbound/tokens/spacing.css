@@ -1,0 +1,37 @@
+/* ===========================================================================
+   Riftbound Tracker — Spacing, Radii, Effects
+   =========================================================================== */
+
+:root {
+  /* Spacing scale (4px base) */
+  --sp-xs: 4px;
+  --sp-sm: 8px;
+  --sp-md: 16px;
+  --sp-lg: 24px;
+  --sp-xl: 32px;
+  --sp-xxl: 48px;
+
+  /* Radii — restrained; Hextech frames are mostly sharp/beveled, not pill */
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --r-full: 999px;
+
+  /* Elevation / shadows — deep, cool, used sparingly */
+  --shadow-card: 0 2px 12px #00000055;
+  --shadow-pop: 0 8px 32px #00000088;
+
+  /* Glows — the signature Hextech treatment for active elements */
+  --glow-cyan: 0 0 16px #00bcff55, 0 0 4px #00bcff88;
+  --glow-cyan-strong: 0 0 24px #00bcff88, 0 0 8px #00bcffcc;
+  --glow-gold: 0 0 16px #c89b3c44;
+
+  /* Hairline frame inset (the engraved-gold edge motif) */
+  --frame-gold: 1px solid var(--gold); /* @kind other */
+  --frame-gold-soft: 1px solid #c89b3c66; /* @kind other */
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1); /* @kind other */
+  --dur-fast: 0.12s; /* @kind other */
+  --dur-base: 0.2s; /* @kind other */
+}

@@ -2,14 +2,56 @@ import React from 'react';
 import { ActivityIndicator, Pressable, StyleSheet, Text, ViewStyle } from 'react-native';
 import { colors, radius, spacing } from '../lib/theme';
 
+type Variant = 'primary' | 'cyan' | 'secondary' | 'danger' | 'ghost';
+
 interface Props {
   label: string;
   onPress: () => void;
-  variant?: 'primary' | 'secondary' | 'danger' | 'ghost';
+  variant?: Variant;
   loading?: boolean;
   disabled?: boolean;
   style?: ViewStyle;
 }
+
+const variantStyles: Record<Variant, { container: object; textColor: string }> = {
+  primary: {
+    container: { backgroundColor: colors.gold },
+    textColor: colors.textOnGold,
+  },
+  cyan: {
+    container: {
+      backgroundColor: '#00bcff1a',
+      borderWidth: 1,
+      borderColor: colors.cyan,
+      shadowColor: colors.cyan,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.5,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    textColor: colors.cyan,
+  },
+  secondary: {
+    container: {
+      backgroundColor: colors.surfaceElevated,
+      borderWidth: 1,
+      borderColor: colors.borderStrong,
+    },
+    textColor: colors.textPrimary,
+  },
+  danger: {
+    container: {
+      backgroundColor: colors.danger + '22',
+      borderWidth: 1,
+      borderColor: colors.danger,
+    },
+    textColor: colors.danger,
+  },
+  ghost: {
+    container: { backgroundColor: 'transparent' },
+    textColor: colors.textSecondary,
+  },
+};
 
 export function Button({ label, onPress, variant = 'primary', loading, disabled, style }: Props) {
   const vs = variantStyles[variant];
@@ -17,7 +59,7 @@ export function Button({ label, onPress, variant = 'primary', loading, disabled,
     <Pressable
       style={({ pressed }) => [
         styles.base,
-        vs.bg,
+        vs.container,
         pressed && styles.pressed,
         (disabled || loading) && styles.disabled,
         style,
@@ -34,13 +76,6 @@ export function Button({ label, onPress, variant = 'primary', loading, disabled,
   );
 }
 
-const variantStyles = {
-  primary: { bg: { backgroundColor: colors.primary }, textColor: '#0A0E1A' },
-  secondary: { bg: { backgroundColor: colors.surfaceElevated, borderWidth: 1, borderColor: colors.border }, textColor: colors.textPrimary },
-  danger: { bg: { backgroundColor: colors.danger + '22', borderWidth: 1, borderColor: colors.danger }, textColor: colors.danger },
-  ghost: { bg: { backgroundColor: 'transparent' }, textColor: colors.textSecondary },
-};
-
 const styles = StyleSheet.create({
   base: {
     borderRadius: radius.md,
@@ -49,7 +84,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  label: { fontSize: 15, fontWeight: '700' },
-  pressed: { opacity: 0.75 },
-  disabled: { opacity: 0.5 },
+  label: { fontSize: 15, fontWeight: '700', letterSpacing: 0.3 },
+  pressed: { opacity: 0.8, transform: [{ scale: 0.97 }] },
+  disabled: { opacity: 0.45 },
 });

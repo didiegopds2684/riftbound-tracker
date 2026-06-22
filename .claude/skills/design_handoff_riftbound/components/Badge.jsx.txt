@@ -1,0 +1,35 @@
+import React from 'react';
+
+const TONES = {
+  gold: { color: 'var(--gold)', bg: '#c89b3c22', border: '#c89b3c66' },
+  cyan: { color: 'var(--cyan)', bg: '#00bcff22', border: '#00bcff66' },
+  win:  { color: 'var(--win)',  bg: 'var(--win-soft)',  border: '#4caf8266' },
+  loss: { color: 'var(--loss)', bg: 'var(--loss-soft)', border: '#e05c5c66' },
+  neutral: { color: 'var(--text-secondary)', bg: 'var(--surface-elevated)', border: 'var(--border)' },
+};
+
+/**
+ * Small status / category pill. Use for "Mais jogada", "Favorito", tournament
+ * tags, counts. The `favorite` flavor adds a gold star marker.
+ */
+export function Badge({ children, label, tone = 'gold', outline = false, favorite = false, style = {} }) {
+  const t = TONES[tone] ?? TONES.gold;
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 4,
+      padding: '2px 9px',
+      borderRadius: 'var(--r-full)',
+      fontSize: 10,
+      fontWeight: 700,
+      textTransform: 'uppercase',
+      letterSpacing: 'var(--ls-overline)',
+      color: t.color,
+      background: outline ? 'transparent' : t.bg,
+      border: `1px solid ${outline ? t.border : 'transparent'}`,
+      ...style,
+    }}>
+      {favorite && <span style={{ fontSize: 11, lineHeight: 1 }}>★</span>}
+      {label ?? children}
+    </span>
+  );
+}

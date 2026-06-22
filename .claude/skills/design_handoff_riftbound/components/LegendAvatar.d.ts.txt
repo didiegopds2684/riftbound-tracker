@@ -1,0 +1,22 @@
+export interface Legend {
+  id: string;
+  name: string;
+  /** Runeterra domain — drives the ring color. */
+  domain: 'Body' | 'Calm' | 'Chaos' | 'Fury' | 'Mind' | 'Order' | 'Colorless' | string;
+  /** Splash-art URL (champions_cache.image_url). */
+  image_url?: string;
+}
+
+/**
+ * Circular Legend avatar with a domain-colored ring; initial fallback when the
+ * splash image is missing. Optional gold favorite star and name caption.
+ */
+export interface LegendAvatarProps {
+  legend?: Legend;
+  size?: number;
+  showName?: boolean;
+  /** Render the gold favorite-Legend star marker. */
+  favorite?: boolean;
+}
+
+export function LegendAvatar(props: LegendAvatarProps): JSX.Element;

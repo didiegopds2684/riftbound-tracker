@@ -1,0 +1,37 @@
+// Profile — identity card + favorite Legend.
+(function () {
+const { LegendAvatar, Button, Badge } = window.RiftboundTrackerDesignSystem_994af1;
+
+function ProfileScreen() {
+  const { PROFILE, byId } = window.RBData;
+  const fav = byId[PROFILE.favorite_legend_id];
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--sp-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-lg)' }}>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, letterSpacing: 'var(--ls-display)' }}>Perfil</h1>
+
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 'var(--sp-lg)', display: 'flex', alignItems: 'center', gap: 'var(--sp-md)' }}>
+        <LegendAvatar legend={fav} size={80} favorite />
+        <div>
+          <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700 }}>{PROFILE.name}</div>
+          <div style={{ color: 'var(--gold)', fontSize: 14, marginTop: 2 }}>@{PROFILE.nickname}</div>
+          {fav && <div style={{ marginTop: 8 }}><Badge label={`Favorita · ${fav.name}`} favorite tone="gold" /></div>}
+        </div>
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 'var(--sp-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-md)' }}>
+        <Button label="Editar perfil" variant="secondary" fullWidth />
+        <Button label="Sair" variant="danger" fullWidth />
+      </div>
+
+      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 'var(--sp-lg)' }}>
+        <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 'var(--sp-sm)' }}>Sobre</div>
+        <div style={{ color: 'var(--text-secondary)', fontSize: 13, lineHeight: 1.6 }}>
+          Riftbound Tracker é um app não-oficial de diário de partidas para o TCG Riftbound. Não é afiliado, endossado ou patrocinado pela Riot Games. Dados de cartas fornecidos por Riftcodex, um projeto de fãs independente.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { ProfileScreen });
+})();

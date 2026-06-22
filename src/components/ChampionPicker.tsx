@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
   FlatList,
-  Image,
   Modal,
   Pressable,
   StyleSheet,
@@ -27,18 +26,21 @@ export function ChampionPicker({ champions, value, onChange, placeholder = 'Sele
   const selected = champions.find((c) => c.id === value);
 
   const filtered = useMemo(
-    () =>
-      champions.filter((c) => c.name.toLowerCase().includes(search.toLowerCase())),
+    () => champions.filter((c) => c.name.toLowerCase().includes(search.toLowerCase())),
     [champions, search]
   );
 
   return (
     <>
-      <Pressable style={styles.trigger} onPress={() => setOpen(true)}>
+      <Pressable
+        style={({ pressed }) => [styles.trigger, pressed && styles.triggerPressed]}
+        onPress={() => setOpen(true)}
+      >
         {selected ? (
           <View style={styles.selectedRow}>
             <ChampionAvatar champion={selected} size={32} />
             <Text style={styles.selectedName}>{selected.name}</Text>
+            <Text style={styles.selectedDomain}>{selected.domain}</Text>
           </View>
         ) : (
           <Text style={styles.placeholder}>{placeholder}</Text>
@@ -50,7 +52,7 @@ export function ChampionPicker({ champions, value, onChange, placeholder = 'Sele
         <View style={styles.modal}>
           <View style={styles.modalHeader}>
             <Text style={typography.h3}>Escolher Legend</Text>
-            <Pressable onPress={() => setOpen(false)}>
+            <Pressable onPress={() => setOpen(false)} style={styles.closeHit}>
               <Text style={styles.closeBtn}>✕</Text>
             </Pressable>
           </View>
@@ -100,9 +102,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: colors.border,
+    minHeight: 52,
   },
-  selectedRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  triggerPressed: { borderColor: colors.cyan },
+  selectedRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, flex: 1 },
   selectedName: { ...typography.body, flex: 1 },
+  selectedDomain: { fontSize: 11, color: colors.textMuted, marginRight: spacing.sm },
   placeholder: { color: colors.textMuted, fontSize: 15 },
   chevron: { color: colors.textMuted, fontSize: 20 },
   modal: { flex: 1, backgroundColor: colors.background },
@@ -115,7 +120,8 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  closeBtn: { color: colors.textSecondary, fontSize: 20, padding: spacing.sm },
+  closeHit: { padding: spacing.sm },
+  closeBtn: { color: colors.textSecondary, fontSize: 20 },
   search: {
     margin: spacing.md,
     backgroundColor: colors.surfaceElevated,
@@ -133,9 +139,14 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     borderRadius: radius.md,
     marginBottom: spacing.xs,
+    borderWidth: 1,
+    borderColor: 'transparent',
   },
-  itemSelected: { backgroundColor: colors.surfaceElevated },
+  itemSelected: {
+    backgroundColor: colors.surfaceElevated,
+    borderColor: colors.cyan,
+  },
   itemName: { ...typography.body },
   itemDomain: { ...typography.bodySmall },
-  check: { color: colors.primary, fontSize: 18, fontWeight: '700' },
+  check: { color: colors.cyan, fontSize: 18, fontWeight: '700' },
 });

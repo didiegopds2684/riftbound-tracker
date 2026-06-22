@@ -16,14 +16,14 @@ export function FormField({ label, error, style, ...rest }: Props) {
         placeholderTextColor={colors.textMuted}
         {...rest}
       />
-      {error && <Text style={styles.error}>{error}</Text>}
+      {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { gap: spacing.xs },
-  label: { ...typography.label, textTransform: 'uppercase', letterSpacing: 0.5 },
+  label: { ...typography.label },
   input: {
     backgroundColor: colors.surfaceElevated,
     borderRadius: radius.md,

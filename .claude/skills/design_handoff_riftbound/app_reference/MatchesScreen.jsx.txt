@@ -1,0 +1,74 @@
+// Matches list — the journal of logged physical matches.
+(function () {
+const { LegendAvatar, ResultBadge, Badge, Button } = window.RiftboundTrackerDesignSystem_994af1;
+
+function MatchCard({ match }) {
+  const { byId, TOURNAMENT_LABELS } = window.RBData;
+  const mine = byId[match.my_legend_id];
+  const opps = match.opponent_legend_ids.map((id) => byId[id]);
+  const date = new Date(match.match_date + 'T12:00:00').toLocaleDateString('pt-BR');
+  return (
+    <div style={{ background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: 'var(--sp-md)', border: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-sm)' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-sm)' }}>
+        <span style={{ fontWeight: 600, fontSize: 13 }}>{date}</span>
+        <span style={{ color: 'var(--text-muted)', fontSize: 12, flex: 1 }}>{match.mode.toUpperCase()} · {match.match_format.toUpperCase()}</span>
+        <Badge label={TOURNAMENT_LABELS[match.tournament_type]} tone="neutral" outline />
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <LegendAvatar legend={mine} size={44} showName />
+          <span style={{ color: 'var(--text-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)' }}>Eu</span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--gold)' }}>{match.score_summary}</span>
+          <ResultBadge result={match.final_result} />
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
+          <div style={{ display: 'flex', gap: 'var(--sp-xs)' }}>
+            {opps.map((l, i) => <LegendAvatar key={i} legend={l} size={44} showName />)}
+          </div>
+          <span style={{ color: 'var(--text-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)' }}>Oponente</span>
+        </div>
+      </div>
+      {match.notes && <span style={{ color: 'var(--text-secondary)', fontSize: 13, fontStyle: 'italic' }}>{match.notes}</span>}
+    </div>
+  );
+}
+
+function MatchesScreen() {
+  const { MATCHES } = window.RBData;
+  const [showNew, setShowNew] = React.useState(false);
+  const [matches, setMatches] = React.useState(MATCHES);
+
+  if (showNew) {
+    return (
+      <window.NewMatchScreen
+        onBack={() => setShowNew(false)}
+        onSave={(m) => {
+          const today = new Date().toISOString().slice(0, 10);
+          setMatches((prev) => [{
+            id: 'new-' + Date.now(), mode: m.mode, match_format: m.format, match_date: today,
+            my_legend_id: m.mine, opponent_legend_ids: [m.opp], tournament_type: m.tournament,
+            final_result: m.result, score_summary: m.score, notes: m.notes || undefined,
+          }, ...prev]);
+          setShowNew(false);
+        }}
+      />
+    );
+  }
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 'var(--sp-lg) var(--sp-lg) var(--sp-sm)' }}>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, letterSpacing: 'var(--ls-display)' }}>Partidas</h1>
+        <Button label="+ Nova" size="sm" onClick={() => setShowNew(true)} />
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--sp-md)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-sm)' }}>
+        {matches.map((m) => <MatchCard key={m.id} match={m} />)}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { MatchesScreen });
+})();

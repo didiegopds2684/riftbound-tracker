@@ -1,0 +1,61 @@
+/* ===========================================================================
+   Riftbound Tracker — Color System
+   Hextech / Runeterra: deep blue-black surfaces, antique-gold borders,
+   magical-cyan (mana) for active/glowing elements.
+   =========================================================================== */
+
+:root {
+  /* --- Base surfaces (deep LoL-client blue-black) --- */
+  --bg: #010a15;              /* app background — deepest */
+  --bg-2: #04101f;            /* alt background band */
+  --surface: #0a1428;         /* card background */
+  --surface-elevated: #122039;/* raised card / inputs / hover */
+  --surface-sunken: #06101d;  /* wells, track backgrounds */
+
+  /* --- Borders / hairlines --- */
+  --border: #1e2d4a;          /* default hairline */
+  --border-strong: #2a3a5c;   /* emphasized divider */
+
+  /* --- Gold (antique / hextech frame) --- */
+  --gold: #c89b3c;            /* primary — medal & frame gold */
+  --gold-dark: #785a28;       /* engraved / pressed gold */
+  --gold-light: #f0e6d2;      /* bright bevel highlight */
+  --gold-deep: #463714;       /* gold tint backgrounds (use w/ alpha) */
+
+  /* --- Cyan / mana (active, glowing, interactive) --- */
+  --cyan: #00bcff;            /* mana crystal — active accent */
+  --cyan-dark: #0a7bb0;       /* pressed cyan */
+  --cyan-glow: #5ed8ff;       /* glow highlight */
+
+  /* --- Text --- */
+  --text-primary: #f0e6d2;    /* main reading text (warm parchment) */
+  --text-secondary: #8a93b0;  /* secondary / labels */
+  --text-muted: #5a6485;      /* muted / captions */
+  --text-on-gold: #010a15;    /* text on solid gold fills */
+
+  /* --- Result semantics --- */
+  --win: #4caf82;             /* victory green */
+  --win-soft: #4caf8222;
+  --loss: #e05c5c;            /* defeat red */
+  --loss-soft: #e05c5c22;
+  --draw: #8b8fa8;            /* draw grey */
+  --draw-soft: #8b8fa822;
+
+  /* --- Domain colors (Runeterra card domains) --- */
+  --domain-body: #c06020;
+  --domain-calm: #4a8090;
+  --domain-chaos: #904a90;
+  --domain-fury: #c03030;
+  --domain-mind: #6080c0;
+  --domain-order: #90a050;
+  --domain-colorless: #706880;
+
+  /* --- Semantic aliases --- */
+  --surface-card: var(--surface);
+  --surface-input: var(--surface-elevated);
+  --text-body: var(--text-primary);
+  --text-label: var(--text-secondary);
+  --accent: var(--cyan);
+  --accent-frame: var(--gold);
+  --focus-ring: var(--cyan);
+}

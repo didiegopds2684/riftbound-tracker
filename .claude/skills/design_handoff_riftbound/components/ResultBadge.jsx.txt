@@ -1,0 +1,29 @@
+import React from 'react';
+
+const CFG = {
+  win:  { label: 'Vitória', color: 'var(--win)',  bg: 'var(--win-soft)' },
+  loss: { label: 'Derrota', color: 'var(--loss)', bg: 'var(--loss-soft)' },
+  draw: { label: 'Empate',  color: 'var(--draw)', bg: 'var(--draw-soft)' },
+};
+
+/**
+ * Pill badge for a match result (Vitória / Derrota / Empate) in result semantics.
+ */
+export function ResultBadge({ result, style = {} }) {
+  const cfg = CFG[result] ?? CFG.draw;
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center',
+      padding: '3px 10px',
+      borderRadius: 'var(--r-full)',
+      background: cfg.bg,
+      color: cfg.color,
+      fontSize: 12,
+      fontWeight: 700,
+      letterSpacing: '0.02em',
+      ...style,
+    }}>
+      {cfg.label}
+    </span>
+  );
+}

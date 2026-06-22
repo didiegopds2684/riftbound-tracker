@@ -1,0 +1,25 @@
+/**
+ * One player's scoreboard zone for the tabletop point counter (§6): a glowing
+ * cyan progress rail, a giant centered counter, and two large faceted
+ * Hextech-crystal +/- buttons. `flipped` rotates the whole zone 180° for the
+ * opponent across the table.
+ *
+ * @startingPoint section="Scoreboard" subtitle="Face-to-face player score zone" viewport="390x360"
+ */
+export interface ScoreStepperProps {
+  points: number;
+  /** Points needed to win — drives the side rail fill. */
+  winTarget?: number;
+  /** Uppercase player name overline. */
+  name: string;
+  /** Optional meta line (e.g. "Games: 1"). */
+  meta?: React.ReactNode;
+  onAdd: () => void;
+  onSub: () => void;
+  /** Rotate 180° for the opponent's side. */
+  flipped?: boolean;
+  /** Dim the zone when it is not this player's turn / not active. */
+  active?: boolean;
+}
+
+export function ScoreStepper(props: ScoreStepperProps): JSX.Element;

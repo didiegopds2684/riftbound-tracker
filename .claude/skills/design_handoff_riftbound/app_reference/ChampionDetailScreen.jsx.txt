@@ -1,0 +1,115 @@
+// Champion Detail (SPEC §5.2) — private stats + matchups for the logged-in user.
+(function () {
+const { KpiCard, MatchupBar, Badge } = window.RiftboundTrackerDesignSystem_994af1;
+
+const DOMAIN_VARS = {
+  Body: 'var(--domain-body)', Calm: 'var(--domain-calm)', Chaos: 'var(--domain-chaos)',
+  Fury: 'var(--domain-fury)', Mind: 'var(--domain-mind)', Order: 'var(--domain-order)',
+  Colorless: 'var(--domain-colorless)',
+};
+
+function MatchupList({ title, accent, rows }) {
+  const { byId } = window.RBData;
+  return (
+    <div style={{
+      background: 'var(--surface)', border: '1px solid var(--border)',
+      borderRadius: 'var(--r-md)', padding: 'var(--sp-md)',
+      display: 'flex', flexDirection: 'column', gap: 'var(--sp-md)',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <span style={{ width: 4, height: 16, borderRadius: 2, background: accent }} />
+        <span style={{
+          fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)',
+          textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)',
+        }}>{title}</span>
+      </div>
+      {rows.map((r) => (
+        <MatchupBar key={r.id} legend={byId[r.id]} wins={r.wins} total={r.total} draws={r.draws} />
+      ))}
+    </div>
+  );
+}
+
+function ChampionDetailScreen({ stats, isFavorite, onBack }) {
+  const { legend } = stats;
+  const domainColor = DOMAIN_VARS[legend.domain] ?? 'var(--gold)';
+  const winRate = stats.total > 0 ? Math.round((stats.wins / stats.total) * 100) : 0;
+
+  // sort matchups by win-rate → advantages (top) / challenges (bottom)
+  const ranked = [...stats.matchups]
+    .map((m) => ({ ...m, wr: m.total > 0 ? m.wins / m.total : 0 }))
+    .sort((a, b) => b.wr - a.wr);
+  const advantages = ranked.slice(0, 3);
+  const challenges = [...ranked].reverse().slice(0, 3);
+
+  return (
+    <div style={{ flex: 1, overflowY: 'auto', background: 'var(--bg)' }}>
+      {/* ---- Header: full-bleed splash + protection gradient ---- */}
+      <div style={{ position: 'relative', height: 220, overflow: 'hidden' }}>
+        <img src={legend.image_url} alt={legend.name}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }} />
+        <div style={{
+          position: 'absolute', inset: 0,
+          background: 'linear-gradient(180deg, rgba(1,10,21,0.35) 0%, rgba(1,10,21,0.1) 35%, rgba(1,10,21,0.85) 80%, var(--bg) 100%)',
+        }} />
+        {/* domain hairline accent at the bottom of the art */}
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: 2, background: domainColor, opacity: 0.8 }} />
+
+        <button onClick={onBack} style={{
+          position: 'absolute', top: 16, left: 16, width: 38, height: 38,
+          borderRadius: '50%', background: 'rgba(1,10,21,0.55)', border: '1px solid var(--border-strong)',
+          color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, backdropFilter: 'blur(4px)',
+        }}>←</button>
+
+        <div style={{ position: 'absolute', left: 'var(--sp-lg)', right: 'var(--sp-lg)', bottom: 'var(--sp-md)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+            <span style={{
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              padding: '3px 10px', borderRadius: 'var(--r-full)',
+              background: 'rgba(1,10,21,0.5)', border: `1px solid ${domainColor}`,
+              fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)',
+              color: 'var(--text-primary)',
+            }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: domainColor }} />
+              {legend.domain}
+            </span>
+            {isFavorite && <Badge label="Favorito" favorite tone="gold" />}
+          </div>
+          <h1 style={{
+            fontFamily: 'var(--font-display)', fontSize: 38, fontWeight: 700,
+            color: 'var(--text-primary)', letterSpacing: 'var(--ls-display)',
+            textShadow: '0 2px 18px rgba(1,10,21,0.9)', lineHeight: 1,
+          }}>{legend.name}</h1>
+        </div>
+      </div>
+
+      {/* ---- KPI grid (gold-framed) ---- */}
+      <div style={{ padding: 'var(--sp-md)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-md)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--sp-md)' }}>
+          <KpiCard label="Win Rate" value={`${winRate}%`} sub={`${stats.wins}V / ${stats.losses}D / ${stats.draws}E`} accent={winRate >= 50 ? 'win' : 'loss'} />
+          <KpiCard label="Partidas" value={stats.total} sub="registradas" accent="gold" />
+          <KpiCard label="Jogando 1º" value={`${stats.firstWinRate}%`} sub="win rate" accent="cyan" />
+          <KpiCard label="Jogando 2º" value={`${stats.secondWinRate}%`} sub="win rate" accent="cyan" />
+        </div>
+
+        {/* ---- Matchups ---- */}
+        <div style={{ marginTop: 4, marginBottom: 2 }}>
+          <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: 'var(--ls-display)' }}>
+            Matchups
+          </h2>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
+            Seu desempenho contra cada Legend rival
+          </div>
+        </div>
+
+        <MatchupList title="Top Vantagens"        accent="var(--win)"  rows={advantages} />
+        <MatchupList title="Principais Desafios"  accent="var(--loss)" rows={challenges} />
+        <div style={{ height: 8 }} />
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { ChampionDetailScreen, MatchupList });
+})();

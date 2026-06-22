@@ -1,0 +1,22 @@
+import { CSSProperties } from 'react';
+import { Legend } from './LegendAvatar';
+
+/**
+ * One head-to-head matchup row — rival Legend, a green/red win-loss proportion
+ * bar, and the win-rate %. Stack these in "Top Vantagens" / "Principais
+ * Desafios" lists on the Champion-Detail screen.
+ *
+ * @startingPoint section="Stats" subtitle="Head-to-head win/loss proportion row" viewport="700x90"
+ */
+export interface MatchupBarProps {
+  legend?: Legend;
+  /** Wins against this rival. */
+  wins: number;
+  /** Total games played against this rival. */
+  total: number;
+  /** Draws (optional, rendered as a grey middle segment). */
+  draws?: number;
+  style?: CSSProperties;
+}
+
+export function MatchupBar(props: MatchupBarProps): JSX.Element;

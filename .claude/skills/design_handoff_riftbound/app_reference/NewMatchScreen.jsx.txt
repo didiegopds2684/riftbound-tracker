@@ -1,0 +1,130 @@
+// New Match (registrar partida) — log a physical match into the journal.
+(function () {
+const { LegendAvatar, SegmentControl, ResultBadge, Button } = window.RiftboundTrackerDesignSystem_994af1;
+
+// Inline Legend selector: a tappable field that expands a domain-ringed avatar grid.
+function LegendSelect({ label, legends, value, onChange, placeholder }) {
+  const [open, setOpen] = React.useState(false);
+  const sel = legends.find((l) => l.id === value);
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-xs)' }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)' }}>{label}</span>
+      <button onClick={() => setOpen((o) => !o)} style={{
+        width: '100%', padding: 'var(--sp-sm) var(--sp-md)', borderRadius: 'var(--r-md)',
+        background: 'var(--surface-elevated)', border: `1px solid ${open ? 'var(--cyan)' : 'var(--border)'}`,
+        boxShadow: open ? 'var(--glow-cyan)' : 'none',
+        color: sel ? 'var(--text-primary)' : 'var(--text-muted)',
+        display: 'flex', alignItems: 'center', gap: 'var(--sp-sm)', fontSize: 15, minHeight: 52,
+      }}>
+        {sel ? (<><LegendAvatar legend={sel} size={32} /><span>{sel.name}</span><span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--text-muted)' }}>{sel.domain}</span></>)
+             : (<><span>{placeholder}</span><span style={{ marginLeft: 'auto', color: 'var(--text-muted)' }}>▾</span></>)}
+      </button>
+      {open && (
+        <div style={{
+          background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-md)',
+          padding: 'var(--sp-md)', display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 'var(--sp-sm)',
+        }}>
+          {legends.map((l) => (
+            <button key={l.id} onClick={() => { onChange(l.id); setOpen(false); }}
+              style={{ display: 'flex', justifyContent: 'center', borderRadius: 'var(--r-sm)', padding: 4, outline: l.id === value ? '2px solid var(--cyan)' : 'none' }}>
+              <LegendAvatar legend={l} size={40} />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Section({ children }) {
+  return (
+    <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--r-lg)', padding: 'var(--sp-md)', display: 'flex', flexDirection: 'column', gap: 'var(--sp-md)' }}>
+      {children}
+    </div>
+  );
+}
+
+function NewMatchScreen({ onBack, onSave }) {
+  const { LEGENDS, TOURNAMENT_LABELS } = window.RBData;
+  const [mine, setMine] = React.useState('1');
+  const [opp, setOpp] = React.useState(null);
+  const [mode, setMode] = React.useState('1v1');
+  const [format, setFormat] = React.useState('bo3');
+  const [tournament, setTournament] = React.useState('casual');
+  const [result, setResult] = React.useState('win');
+  const [score, setScore] = React.useState('2-1');
+  const [notes, setNotes] = React.useState('');
+
+  const canSave = mine && opp;
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-sm)', padding: 'var(--sp-md) var(--sp-md) var(--sp-sm)' }}>
+        <button onClick={onBack} style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--surface-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>←</button>
+        <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 22, fontWeight: 700, letterSpacing: 'var(--ls-display)' }}>Nova Partida</h1>
+      </div>
+
+      <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--sp-md)', paddingTop: 0, display: 'flex', flexDirection: 'column', gap: 'var(--sp-md)' }}>
+        <Section>
+          <LegendSelect label="Sua Legend" legends={LEGENDS} value={mine} onChange={setMine} placeholder="Selecionar Legend" />
+          <LegendSelect label="Oponente" legends={LEGENDS} value={opp} onChange={setOpp} placeholder="Selecionar oponente" />
+        </Section>
+
+        <Section>
+          <SegmentControl label="Modo" value={mode} onChange={setMode} options={[{ value: '1v1', label: '1v1' }, { value: '2v2', label: '2v2' }]} />
+          <SegmentControl label="Formato" value={format} onChange={setFormat} options={[{ value: 'bo1', label: 'Bo1' }, { value: 'bo3', label: 'Bo3' }]} />
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-xs)' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)' }}>Torneio</span>
+            <select value={tournament} onChange={(e) => setTournament(e.target.value)} style={{
+              padding: 'var(--sp-md)', borderRadius: 'var(--r-md)', background: 'var(--surface-elevated)',
+              border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 15, appearance: 'none',
+            }}>
+              {Object.entries(TOURNAMENT_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+            </select>
+          </div>
+        </Section>
+
+        <Section>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-xs)' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)' }}>Resultado</span>
+            <div style={{ display: 'flex', gap: 'var(--sp-xs)' }}>
+              {[['win', 'Vitória', 'var(--win)'], ['draw', 'Empate', 'var(--draw)'], ['loss', 'Derrota', 'var(--loss)']].map(([v, lbl, col]) => {
+                const on = v === result;
+                return (
+                  <button key={v} onClick={() => setResult(v)} style={{
+                    flex: 1, padding: '10px 0', borderRadius: 'var(--r-md)', fontSize: 14, fontWeight: 700,
+                    border: `1px solid ${on ? col : 'var(--border)'}`,
+                    background: on ? col + '22' : 'var(--surface-elevated)',
+                    color: on ? col : 'var(--text-secondary)',
+                  }}>{lbl}</button>
+                );
+              })}
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-xs)' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)' }}>Placar</span>
+            <input value={score} onChange={(e) => setScore(e.target.value)} placeholder="2-1" style={{
+              padding: 'var(--sp-md)', borderRadius: 'var(--r-md)', background: 'var(--surface-elevated)',
+              border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 15, fontFamily: 'var(--font-display)', fontWeight: 700, textAlign: 'center', letterSpacing: '0.1em',
+            }} />
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--sp-xs)' }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)' }}>Notas</span>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} placeholder="Como foi a partida?" style={{
+              padding: 'var(--sp-md)', borderRadius: 'var(--r-md)', background: 'var(--surface-elevated)',
+              border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 15, resize: 'none', fontFamily: 'var(--font-body)',
+            }} />
+          </div>
+        </Section>
+      </div>
+
+      <div style={{ padding: 'var(--sp-md)', borderTop: '1px solid var(--border)', background: 'var(--surface)' }}>
+        <Button label="Salvar partida" variant="cyan" size="lg" fullWidth disabled={!canSave}
+          onClick={() => onSave && onSave({ mine, opp, mode, format, tournament, result, score, notes })} />
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { NewMatchScreen });
+})();

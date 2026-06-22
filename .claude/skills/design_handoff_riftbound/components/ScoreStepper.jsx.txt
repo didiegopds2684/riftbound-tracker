@@ -1,0 +1,94 @@
+import React from 'react';
+
+/**
+ * One player's scoreboard zone: a slim glowing cyan progress rail on the left
+ * (fills toward the win target), the giant centered point counter, and two
+ * large faceted Hextech-crystal +/- buttons. Set `flipped` to rotate the whole
+ * zone 180° for the opponent sitting across the table.
+ */
+export function ScoreStepper({
+  points,
+  winTarget = 20,
+  name,
+  meta = null,
+  onAdd,
+  onSub,
+  flipped = false,
+  active = true,
+}) {
+  const pct = Math.min(Math.max(points / winTarget, 0), 1);
+
+  const crystal = (sign, onClick, isAdd) => (
+    <button
+      onClick={onClick}
+      aria-label={isAdd ? 'add point' : 'subtract point'}
+      style={{
+        width: 76, height: 76,
+        // faceted gem silhouette
+        clipPath: 'polygon(50% 0%, 85% 15%, 100% 50%, 85% 85%, 50% 100%, 15% 85%, 0% 50%, 15% 15%)',
+        background: isAdd ? '#00bcff1f' : 'var(--surface-elevated)',
+        border: `1.5px solid ${isAdd ? 'var(--cyan)' : 'var(--border-strong)'}`,
+        color: isAdd ? 'var(--cyan)' : 'var(--text-secondary)',
+        boxShadow: isAdd ? 'var(--glow-cyan)' : 'none',
+        fontSize: 34, fontWeight: 400, lineHeight: 1,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transition: 'transform var(--dur-fast) var(--ease-out), filter var(--dur-fast) var(--ease-out)',
+      }}
+      onPointerDown={(e) => { e.currentTarget.style.transform = 'scale(0.92)'; }}
+      onPointerUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+      onPointerLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+    >
+      {sign}
+    </button>
+  );
+
+  return (
+    <div style={{
+      flex: 1, position: 'relative', display: 'flex',
+      transform: flipped ? 'rotate(180deg)' : undefined,
+      opacity: active ? 1 : 0.55,
+      transition: 'opacity var(--dur-base) var(--ease-out)',
+    }}>
+      {/* side progress rail */}
+      <div style={{
+        width: 6, alignSelf: 'stretch', margin: 'var(--sp-lg)',
+        borderRadius: 'var(--r-full)', background: 'var(--surface-sunken)',
+        overflow: 'hidden', display: 'flex', flexDirection: 'column-reverse', flexShrink: 0,
+      }}>
+        <div style={{
+          height: `${pct * 100}%`, width: '100%',
+          background: 'linear-gradient(var(--cyan-glow), var(--cyan))',
+          boxShadow: 'var(--glow-cyan)',
+          borderRadius: 'var(--r-full)',
+          transition: 'height var(--dur-base) var(--ease-out)',
+        }} />
+      </div>
+
+      {/* main column */}
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center', gap: 'var(--sp-sm)',
+        padding: 'var(--sp-lg) var(--sp-md)',
+      }}>
+        <span style={{
+          fontSize: 11, fontWeight: 700, color: 'var(--text-secondary)',
+          textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)',
+        }}>
+          {name}
+        </span>
+        {meta && <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{meta}</span>}
+        <div style={{
+          fontFamily: 'var(--font-display)', fontSize: 'var(--fs-counter)', fontWeight: 700,
+          color: 'var(--text-primary)', lineHeight: 1, minWidth: 120, textAlign: 'center',
+          textShadow: '0 0 24px #00bcff22',
+        }}>
+          {points}
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-xl)', marginTop: 'var(--sp-sm)' }}>
+          {crystal('\u2212', onSub, false)}
+          {crystal('+', onAdd, true)}
+        </div>
+      </div>
+    </div>
+  );
+}

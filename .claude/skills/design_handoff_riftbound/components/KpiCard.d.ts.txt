@@ -1,0 +1,21 @@
+import { ReactNode, CSSProperties } from 'react';
+
+/**
+ * Gold-framed KPI / statistic card. A big display-font value over an uppercase
+ * overline label, with an optional sub-line. Used in the Champion-Detail KPI grid
+ * (Win Rate, Total V/D/E, 1st vs 2nd).
+ *
+ * @startingPoint section="Stats" subtitle="Gold-framed stat / KPI card" viewport="360x140"
+ */
+export interface KpiCardProps {
+  /** Uppercase overline label. */
+  label: string;
+  /** Hero value (string or number). */
+  value: ReactNode;
+  /** Optional sub-line beneath the value. */
+  sub?: ReactNode;
+  accent?: 'gold' | 'cyan' | 'win' | 'loss' | 'plain';
+  style?: CSSProperties;
+}
+
+export function KpiCard(props: KpiCardProps): JSX.Element;

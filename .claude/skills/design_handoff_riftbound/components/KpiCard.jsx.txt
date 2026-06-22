@@ -1,0 +1,40 @@
+import React from 'react';
+
+/**
+ * Gold-framed statistic card for the Champion-Detail KPI grid. Big value with
+ * an uppercase overline label and optional sub-line; tint the value with
+ * `accent` ('gold' | 'cyan' | 'win' | 'loss' | 'plain').
+ */
+export function KpiCard({ label, value, sub = null, accent = 'gold', style = {} }) {
+  const COLORS = {
+    gold: 'var(--gold)', cyan: 'var(--cyan)',
+    win: 'var(--win)', loss: 'var(--loss)', plain: 'var(--text-primary)',
+  };
+  return (
+    <div style={{
+      background: 'var(--surface)',
+      border: '1px solid var(--gold)',
+      borderRadius: 'var(--r-md)',
+      padding: 'var(--sp-md)',
+      display: 'flex', flexDirection: 'column', gap: 4,
+      minWidth: 0,
+      ...style,
+    }}>
+      <span style={{
+        fontSize: 10, fontWeight: 700, color: 'var(--text-secondary)',
+        textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)',
+      }}>
+        {label}
+      </span>
+      <span style={{
+        fontFamily: 'var(--font-display)', fontSize: 28, fontWeight: 700,
+        color: COLORS[accent] ?? COLORS.gold, lineHeight: 1.05,
+      }}>
+        {value}
+      </span>
+      {sub && (
+        <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>{sub}</span>
+      )}
+    </div>
+  );
+}

@@ -1,0 +1,18 @@
+import { ReactNode, CSSProperties } from 'react';
+
+/**
+ * Small status / category pill — "Mais jogada", tournament tags, counts,
+ * the gold "Favorito" marker.
+ */
+export interface BadgeProps {
+  children?: ReactNode;
+  label?: string;
+  tone?: 'gold' | 'cyan' | 'win' | 'loss' | 'neutral';
+  /** Transparent fill with a colored hairline border. */
+  outline?: boolean;
+  /** Prepend a gold star (favorite Legend marker). */
+  favorite?: boolean;
+  style?: CSSProperties;
+}
+
+export function Badge(props: BadgeProps): JSX.Element;

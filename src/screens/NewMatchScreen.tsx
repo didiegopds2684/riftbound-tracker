@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -9,8 +10,11 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useMatches, CreateMatchInput } from '../hooks/useMatches';
 import { useChampions } from '../hooks/useChampions';
+import { useAuth } from '../hooks/useAuth';
 import { colors, radius, spacing, typography } from '../lib/theme';
 import { GameResult, MatchFormat, MatchMode, TournamentType, TOURNAMENT_LABELS } from '../types';
 import { Button } from '../components/Button';
@@ -31,68 +35,100 @@ function SegmentControl<T extends string>({
     <View style={seg.container}>
       <Text style={seg.label}>{label}</Text>
       <View style={seg.row}>
-        {options.map((opt) => (
-          <Pressable
-            key={opt.value}
-            style={[seg.option, opt.value === value && seg.optionActive]}
-            onPress={() => onChange(opt.value)}
-          >
-            <Text style={[seg.optionText, opt.value === value && seg.optionTextActive]}>
-              {opt.label}
-            </Text>
-          </Pressable>
-        ))}
+        {options.map((opt) => {
+          const active = opt.value === value;
+          return (
+            <Pressable
+              key={opt.value}
+              style={[seg.option, active && seg.optionActive]}
+              onPress={() => onChange(opt.value)}
+            >
+              <Text style={[seg.optionText, active && seg.optionTextActive]}>
+                {opt.label}
+              </Text>
+            </Pressable>
+          );
+        })}
       </View>
     </View>
   );
 }
 
-function ResultSelector({ value, onChange }: { value: GameResult | null; onChange: (r: GameResult) => void }) {
+function ResultSelector({
+  value,
+  onChange,
+}: {
+  value: GameResult | null;
+  onChange: (r: GameResult) => void;
+}) {
   const options: { v: GameResult; label: string; color: string }[] = [
-    { v: 'win', label: 'Vitória', color: colors.win },
-    { v: 'draw', label: 'Empate', color: colors.draw },
+    { v: 'win',  label: 'Vitória', color: colors.win },
+    { v: 'draw', label: 'Empate',  color: colors.draw },
     { v: 'loss', label: 'Derrota', color: colors.loss },
   ];
   return (
     <View style={res.row}>
-      {options.map((opt) => (
-        <Pressable
-          key={opt.v}
-          style={[res.btn, value === opt.v && { backgroundColor: opt.color + '33', borderColor: opt.color }]}
-          onPress={() => onChange(opt.v)}
-        >
-          <Text style={[res.text, value === opt.v && { color: opt.color }]}>{opt.label}</Text>
-        </Pressable>
-      ))}
+      {options.map((opt) => {
+        const on = value === opt.v;
+        return (
+          <Pressable
+            key={opt.v}
+            style={[res.btn, on && { backgroundColor: opt.color + '33', borderColor: opt.color }]}
+            onPress={() => onChange(opt.v)}
+          >
+            <Text style={[res.text, on && { color: opt.color }]}>{opt.label}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
 
-const TOURNAMENT_OPTIONS = Object.entries(TOURNAMENT_LABELS).map(([value, label]) => ({ value: value as TournamentType, label }));
+const TOURNAMENT_OPTIONS = Object.entries(TOURNAMENT_LABELS).map(([value, label]) => ({
+  value: value as TournamentType,
+  label,
+}));
 
-export function NewMatchScreen({ onDone }: { onDone: () => void }) {
-  const { createMatch } = useMatches();
-  const { champions } = useChampions();
+interface NewMatchProps {
+  onDone: () => void;
+  initialDate?: Date;
+  initialMode?: MatchMode;
+  initialFormat?: MatchFormat;
+  initialTournament?: TournamentType;
+}
 
-  const [mode, setMode] = useState<MatchMode>('1v1');
-  const [format, setFormat] = useState<MatchFormat>('bo1');
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
-  const [myChampion, setMyChampion] = useState<string | null>(null);
-  const [partnerChampion, setPartnerChampion] = useState<string | null>(null);
-  const [oppChampions, setOppChampions] = useState<(string | null)[]>([null]);
-  const [game1, setGame1] = useState<GameResult | null>(null);
-  const [game2, setGame2] = useState<GameResult | null>(null);
-  const [game3, setGame3] = useState<GameResult | null>(null);
-  const [tournament, setTournament] = useState<TournamentType>('casual');
-  const [notes, setNotes] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [tournamentOpen, setTournamentOpen] = useState(false);
+export function NewMatchScreen({
+  onDone,
+  initialDate,
+  initialMode,
+  initialFormat,
+  initialTournament,
+}: NewMatchProps) {
+  const insets = useSafeAreaInsets();
+  const { createMatch }  = useMatches();
+  const { champions }    = useChampions();
+  const { profile }      = useAuth();
 
-  const showGame3 = format === 'bo3' && game1 !== null && game2 !== null && game1 !== game2;
+  const [mode, setMode]                   = useState<MatchMode>(initialMode ?? '1v1');
+  const [format, setFormat]               = useState<MatchFormat>(initialFormat ?? 'bo3');
+  const [dateObj, setDateObj]             = useState(initialDate ?? new Date());
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [myChampion, setMyChampion]       = useState<string | null>(profile?.favorite_champion_id ?? null);
+  const [partnerChampion, setPartner]     = useState<string | null>(null);
+  const [oppChampions, setOppChampions]   = useState<(string | null)[]>(initialMode === '2v2' ? [null, null] : [null]);
+  const [game1, setGame1]                 = useState<GameResult | null>(null);
+  const [game2, setGame2]                 = useState<GameResult | null>(null);
+  const [game3, setGame3]                 = useState<GameResult | null>(null);
+  const [tournament, setTournament]       = useState<TournamentType>(initialTournament ?? 'casual');
+  const [notes, setNotes]                 = useState('');
+  const [loading, setLoading]             = useState(false);
+  const [error, setError]                 = useState<string | null>(null);
+  const [tournamentOpen, setTournOpen]    = useState(false);
+
+  const showGame3   = format === 'bo3' && game1 !== null && game2 !== null && game1 !== game2;
   const numOpponents = mode === '1v1' ? 1 : 2;
 
-  function updateOppChampion(index: number, id: string) {
+  function updateOpp(index: number, id: string) {
     const next = [...oppChampions];
     while (next.length <= index) next.push(null);
     next[index] = id;
@@ -114,7 +150,7 @@ export function NewMatchScreen({ onDone }: { onDone: () => void }) {
     const input: CreateMatchInput = {
       mode,
       match_format: format,
-      match_date: date,
+      match_date: dateObj.toISOString().split('T')[0],
       my_champion_id: myChampion,
       partner_champion_id: partnerChampion ?? undefined,
       opponent_champion_ids: oppChampions.filter(Boolean) as string[],
@@ -133,126 +169,195 @@ export function NewMatchScreen({ onDone }: { onDone: () => void }) {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={styles.topBar}>
-        <Pressable onPress={onDone}><Text style={styles.back}>← Cancelar</Text></Pressable>
-        <Text style={typography.h3}>Nova Partida</Text>
+      {/* sticky header */}
+      <View style={[styles.topBar, { paddingTop: Math.max(spacing.lg, insets.top + spacing.xs) }]}>
+        <Pressable onPress={onDone}>
+          <Text style={styles.back}>← Cancelar</Text>
+        </Pressable>
+        <Text style={styles.topTitle}>Nova Partida</Text>
         <View style={{ width: 80 }} />
       </View>
 
       <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-        <SegmentControl
-          label="Modo"
-          options={[{ value: '1v1', label: '1v1' }, { value: '2v2', label: '2v2' }]}
-          value={mode}
-          onChange={(v) => {
-            setMode(v);
-            setOppChampions(v === '2v2' ? [null, null] : [null]);
-          }}
-        />
-
-        <SegmentControl
-          label="Formato"
-          options={[{ value: 'bo1', label: 'Bo1' }, { value: 'bo3', label: 'Bo3' }]}
-          value={format}
-          onChange={setFormat}
-        />
-
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Data da partida</Text>
-          <TextInput
-            style={styles.input}
-            value={date}
-            onChangeText={setDate}
-            placeholder="AAAA-MM-DD"
-            placeholderTextColor={colors.textMuted}
+        <View style={styles.section}>
+          <SegmentControl
+            label="Modo"
+            options={[{ value: '1v1', label: '1v1' }, { value: '2v2', label: '2v2' }]}
+            value={mode}
+            onChange={(v) => {
+              setMode(v);
+              setOppChampions(v === '2v2' ? [null, null] : [null]);
+            }}
+          />
+          <SegmentControl
+            label="Formato"
+            options={[{ value: 'bo1', label: 'Bo1' }, { value: 'bo3', label: 'Bo3' }]}
+            value={format}
+            onChange={setFormat}
           />
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Minha Legend</Text>
-          <ChampionPicker champions={champions} value={myChampion} onChange={setMyChampion} />
-        </View>
-
-        {mode === '2v2' && (
+        <View style={styles.section}>
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Legend do parceiro</Text>
-            <ChampionPicker
-              champions={champions}
-              value={partnerChampion}
-              onChange={setPartnerChampion}
-              placeholder="Selecionar (opcional)"
-            />
+            <Text style={styles.fieldLabel}>Data da partida</Text>
+            <Pressable style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
+              <Text style={styles.dateBtnIcon}>📅</Text>
+              <Text style={styles.dateBtnText}>
+                {dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+              </Text>
+            </Pressable>
+
+            {/* Android: dialog nativo (abre direto) */}
+            {showDatePicker && Platform.OS === 'android' && (
+              <DateTimePicker
+                value={dateObj}
+                mode="date"
+                display="default"
+                onChange={(_, picked) => {
+                  setShowDatePicker(false);
+                  if (picked) setDateObj(picked);
+                }}
+              />
+            )}
+
+            {/* iOS: modal com spinner */}
+            {Platform.OS === 'ios' && (
+              <Modal
+                visible={showDatePicker}
+                transparent
+                animationType="slide"
+                onRequestClose={() => setShowDatePicker(false)}
+              >
+                <Pressable style={datePicker.backdrop} onPress={() => setShowDatePicker(false)} />
+                <View style={datePicker.sheet}>
+                  <View style={datePicker.handle} />
+                  <View style={datePicker.toolbar}>
+                    <Pressable onPress={() => setShowDatePicker(false)}>
+                      <Text style={datePicker.done}>Pronto</Text>
+                    </Pressable>
+                  </View>
+                  <DateTimePicker
+                    value={dateObj}
+                    mode="date"
+                    display="spinner"
+                    onChange={(_, picked) => { if (picked) setDateObj(picked); }}
+                    locale="pt-BR"
+                    style={{ width: '100%' }}
+                  />
+                </View>
+              </Modal>
+            )}
           </View>
-        )}
 
-        {Array.from({ length: numOpponents }).map((_, i) => (
-          <View key={i} style={styles.field}>
-            <Text style={styles.fieldLabel}>Legend do oponente {numOpponents > 1 ? i + 1 : ''}</Text>
-            <ChampionPicker
-              champions={champions}
-              value={oppChampions[i] ?? null}
-              onChange={(id) => updateOppChampion(i, id)}
-            />
-          </View>
-        ))}
-
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Game 1</Text>
-          <ResultSelector value={game1} onChange={setGame1} />
-        </View>
-
-        {format === 'bo3' && (
           <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Game 2</Text>
-            <ResultSelector value={game2} onChange={setGame2} />
+            <Text style={styles.fieldLabel}>Minha Legend</Text>
+            <ChampionPicker champions={champions} value={myChampion} onChange={setMyChampion} />
           </View>
-        )}
 
-        {showGame3 && (
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>Game 3 (decisivo)</Text>
-            <ResultSelector value={game3} onChange={setGame3} />
-          </View>
-        )}
-
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Tipo de torneio</Text>
-          <Pressable style={styles.select} onPress={() => setTournamentOpen(!tournamentOpen)}>
-            <Text style={styles.selectText}>{TOURNAMENT_LABELS[tournament]}</Text>
-            <Text style={styles.chevron}>{tournamentOpen ? '▲' : '▼'}</Text>
-          </Pressable>
-          {tournamentOpen && (
-            <View style={styles.dropdown}>
-              {TOURNAMENT_OPTIONS.map((opt) => (
-                <Pressable
-                  key={opt.value}
-                  style={[styles.dropdownItem, opt.value === tournament && styles.dropdownItemActive]}
-                  onPress={() => { setTournament(opt.value); setTournamentOpen(false); }}
-                >
-                  <Text style={[styles.dropdownText, opt.value === tournament && styles.dropdownTextActive]}>
-                    {opt.label}
-                  </Text>
-                </Pressable>
-              ))}
+          {mode === '2v2' && (
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>Legend do parceiro</Text>
+              <ChampionPicker
+                champions={champions}
+                value={partnerChampion}
+                onChange={setPartner}
+                placeholder="Selecionar (opcional)"
+              />
             </View>
           )}
+
+          {Array.from({ length: numOpponents }).map((_, i) => (
+            <View key={i} style={styles.field}>
+              <Text style={styles.fieldLabel}>
+                Legend do oponente{numOpponents > 1 ? ` ${i + 1}` : ''}
+              </Text>
+              <ChampionPicker
+                champions={champions}
+                value={oppChampions[i] ?? null}
+                onChange={(id) => updateOpp(i, id)}
+              />
+            </View>
+          ))}
         </View>
 
-        <View style={styles.field}>
-          <Text style={styles.fieldLabel}>Observações (opcional)</Text>
-          <TextInput
-            style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]}
-            value={notes}
-            onChangeText={setNotes}
-            placeholder="Notas sobre a partida..."
-            placeholderTextColor={colors.textMuted}
-            multiline
-          />
+        <View style={styles.section}>
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Game 1</Text>
+            <ResultSelector value={game1} onChange={setGame1} />
+          </View>
+
+          {format === 'bo3' && (
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>Game 2</Text>
+              <ResultSelector value={game2} onChange={setGame2} />
+            </View>
+          )}
+
+          {showGame3 && (
+            <View style={styles.field}>
+              <Text style={styles.fieldLabel}>Game 3 (decisivo)</Text>
+              <ResultSelector value={game3} onChange={setGame3} />
+            </View>
+          )}
+
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Tipo de torneio</Text>
+            <Pressable
+              style={styles.select}
+              onPress={() => setTournOpen(!tournamentOpen)}
+            >
+              <Text style={styles.selectText}>{TOURNAMENT_LABELS[tournament]}</Text>
+              <Text style={styles.chevron}>{tournamentOpen ? '▲' : '▼'}</Text>
+            </Pressable>
+            {tournamentOpen && (
+              <View style={styles.dropdown}>
+                {TOURNAMENT_OPTIONS.map((opt) => (
+                  <Pressable
+                    key={opt.value}
+                    style={[
+                      styles.dropdownItem,
+                      opt.value === tournament && styles.dropdownItemActive,
+                    ]}
+                    onPress={() => {
+                      setTournament(opt.value);
+                      setTournOpen(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.dropdownText,
+                        opt.value === tournament && styles.dropdownTextActive,
+                      ]}
+                    >
+                      {opt.label}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+            )}
+          </View>
+
+          <View style={styles.field}>
+            <Text style={styles.fieldLabel}>Observações (opcional)</Text>
+            <TextInput
+              style={[styles.input, { minHeight: 80, textAlignVertical: 'top' }]}
+              value={notes}
+              onChangeText={setNotes}
+              placeholder="Notas sobre a partida..."
+              placeholderTextColor={colors.textMuted}
+              multiline
+            />
+          </View>
         </View>
 
-        {error && <Text style={styles.error}>{error}</Text>}
+        {error ? <Text style={styles.error}>{error}</Text> : null}
 
-        <Button label="Salvar partida" onPress={submit} loading={loading} />
+        <Button
+          label="Salvar partida"
+          onPress={submit}
+          loading={loading}
+          variant="cyan"
+        />
         <View style={{ height: spacing.xl }} />
       </ScrollView>
     </KeyboardAvoidingView>
@@ -269,11 +374,25 @@ const styles = StyleSheet.create({
     paddingTop: spacing.lg,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
   },
-  back: { color: colors.primary, fontSize: 15 },
+  topTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
+  back: { color: colors.gold, fontSize: 15 },
   content: { padding: spacing.lg, gap: spacing.lg },
+  section: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    gap: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
   field: { gap: spacing.xs },
-  fieldLabel: { ...typography.label, textTransform: 'uppercase', letterSpacing: 0.5 },
+  fieldLabel: { ...typography.label },
   input: {
     backgroundColor: colors.surfaceElevated,
     borderRadius: radius.md,
@@ -302,15 +421,59 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   dropdownItem: { padding: spacing.md },
-  dropdownItemActive: { backgroundColor: colors.border },
+  dropdownItemActive: { backgroundColor: colors.borderStrong },
   dropdownText: { color: colors.textPrimary, fontSize: 15 },
-  dropdownTextActive: { color: colors.primary, fontWeight: '600' },
+  dropdownTextActive: { color: colors.gold, fontWeight: '600' },
   error: { color: colors.danger, fontSize: 13, textAlign: 'center' },
+  dateBtn: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  dateBtnIcon: { fontSize: 16 },
+  dateBtnText: { color: colors.textPrimary, fontSize: 15, flex: 1 },
+});
+
+const datePicker = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(1,10,21,0.6)',
+  },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    paddingBottom: spacing.xl,
+    borderTopWidth: 1,
+    borderColor: colors.borderStrong,
+  },
+  handle: {
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.borderStrong,
+    alignSelf: 'center',
+    marginTop: spacing.sm,
+  },
+  toolbar: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  done: { color: colors.cyan, fontSize: 16, fontWeight: '600' },
 });
 
 const seg = StyleSheet.create({
   container: { gap: spacing.xs },
-  label: { ...typography.label, textTransform: 'uppercase', letterSpacing: 0.5 },
+  label: { ...typography.label },
   row: { flexDirection: 'row', gap: spacing.xs },
   option: {
     flex: 1,
@@ -321,9 +484,12 @@ const seg = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  optionActive: { backgroundColor: colors.primary + '22', borderColor: colors.primary },
-  optionText: { color: colors.textSecondary, fontWeight: '600' },
-  optionTextActive: { color: colors.primary },
+  optionActive: {
+    backgroundColor: colors.gold + '22',
+    borderColor: colors.gold,
+  },
+  optionText: { color: colors.textSecondary, fontWeight: '600', fontSize: 14 },
+  optionTextActive: { color: colors.gold },
 });
 
 const res = StyleSheet.create({

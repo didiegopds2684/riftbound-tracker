@@ -1,0 +1,47 @@
+import React from 'react';
+import { LegendAvatar } from './LegendAvatar';
+
+/**
+ * A single head-to-head matchup row: rival Legend avatar + name, a horizontal
+ * win/loss proportion bar (green wins / red losses), and the win-rate %.
+ * The heart of the Champion-Detail analysis.
+ */
+export function MatchupBar({ legend, wins, total, draws = 0, style = {} }) {
+  const losses = Math.max(0, total - wins - draws);
+  const pct = (n) => (total > 0 ? (n / total) * 100 : 0);
+  const wr = pct(wins);
+  const wrColor = wr >= 50 ? 'var(--win)' : 'var(--loss)';
+
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--sp-md)', ...style }}>
+      <LegendAvatar legend={legend} size={36} />
+      <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+          <span style={{
+            fontSize: 14, fontWeight: 600, color: 'var(--text-primary)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>
+            {legend?.name}
+          </span>
+          <span style={{ fontSize: 12, color: 'var(--text-muted)', flexShrink: 0 }}>
+            {wins}V / {losses}D{draws ? ` / ${draws}E` : ''}
+          </span>
+        </div>
+        <div style={{
+          display: 'flex', height: 7, borderRadius: 'var(--r-full)', overflow: 'hidden',
+          background: 'var(--surface-sunken)',
+        }}>
+          <div style={{ width: `${pct(wins)}%`, background: 'var(--win)', transition: 'width var(--dur-base) var(--ease-out)' }} />
+          {draws > 0 && <div style={{ width: `${pct(draws)}%`, background: 'var(--draw)' }} />}
+          <div style={{ width: `${pct(losses)}%`, background: 'var(--loss)', transition: 'width var(--dur-base) var(--ease-out)' }} />
+        </div>
+      </div>
+      <span style={{
+        fontFamily: 'var(--font-display)', fontSize: 17, fontWeight: 700,
+        color: wrColor, minWidth: 46, textAlign: 'right',
+      }}>
+        {wr.toFixed(0)}%
+      </span>
+    </div>
+  );
+}

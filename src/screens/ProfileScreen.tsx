@@ -8,23 +8,25 @@ import {
   Text,
   View,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../hooks/useAuth';
 import { useChampions } from '../hooks/useChampions';
-import { colors, radius, spacing, typography } from '../lib/theme';
+import { colors, fonts, radius, spacing, typography } from '../lib/theme';
 import { Button } from '../components/Button';
 import { ChampionPicker } from '../components/ChampionPicker';
 import { ChampionAvatar } from '../components/ChampionAvatar';
 import { FormField } from '../components/FormField';
 
 export function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const { profile, signOut, updateProfile } = useAuth();
   const { champions } = useChampions();
   const [editing, setEditing] = useState(false);
-  const [name, setName] = useState(profile?.name ?? '');
-  const [nickname, setNickname] = useState(profile?.nickname ?? '');
-  const [favChamp, setFavChamp] = useState(profile?.favorite_champion_id ?? null);
+  const [name, setName]       = useState(profile?.name ?? '');
+  const [nickname, setNick]   = useState(profile?.nickname ?? '');
+  const [favChamp, setFav]    = useState(profile?.favorite_champion_id ?? null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError]     = useState<string | null>(null);
 
   const favoriteChampion = champions.find((c) => c.id === (profile?.favorite_champion_id ?? ''));
 
@@ -39,8 +41,8 @@ export function ProfileScreen() {
 
   function cancelEdit() {
     setName(profile?.name ?? '');
-    setNickname(profile?.nickname ?? '');
-    setFavChamp(profile?.favorite_champion_id ?? null);
+    setNick(profile?.nickname ?? '');
+    setFav(profile?.favorite_champion_id ?? null);
     setEditing(false);
     setError(null);
   }
@@ -54,43 +56,54 @@ export function ProfileScreen() {
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView style={styles.root} contentContainerStyle={styles.content}>
+      <ScrollView style={styles.root} contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.sm }]}>
+        <Text style={styles.title}>Perfil</Text>
+
+        {/* Identity card */}
         <View style={styles.heroCard}>
-          <ChampionAvatar champion={favoriteChampion} size={80} showName={false} />
+          <ChampionAvatar
+            champion={favoriteChampion}
+            size={80}
+            favorite={!!favoriteChampion}
+          />
           <View style={{ flex: 1 }}>
-            <Text style={typography.h2}>{profile?.name}</Text>
-            <Text style={styles.nick}>@{profile?.nickname}</Text>
+            <Text style={styles.heroName}>{profile?.name}</Text>
+            <Text style={styles.heroNick}>@{profile?.nickname}</Text>
             {favoriteChampion && (
-              <Text style={styles.favLabel}>Legend favorita: {favoriteChampion.name}</Text>
+              <View style={styles.favBadge}>
+                <Text style={styles.favBadgeText}>★ Favorita · {favoriteChampion.name}</Text>
+              </View>
             )}
           </View>
         </View>
 
+        {/* Actions */}
         {!editing ? (
           <View style={styles.section}>
             <Button label="Editar perfil" onPress={() => setEditing(true)} variant="secondary" />
-            <Button label="Sair" onPress={confirmSignOut} variant="danger" />
+            <Button label="Sair"          onPress={confirmSignOut}          variant="danger" />
           </View>
         ) : (
           <View style={styles.section}>
             <Text style={typography.h3}>Editar perfil</Text>
-            <FormField label="Nome" value={name} onChangeText={setName} />
-            <FormField label="Nickname" value={nickname} onChangeText={setNickname} autoCapitalize="none" />
+            <FormField label="Nome"     value={name}     onChangeText={setName} />
+            <FormField label="Nickname" value={nickname} onChangeText={setNick} autoCapitalize="none" />
             <View>
               <Text style={styles.fieldLabel}>Legend favorita</Text>
               <ChampionPicker
                 champions={champions}
                 value={favChamp}
-                onChange={setFavChamp}
+                onChange={setFav}
                 placeholder="Selecionar Legend favorita"
               />
             </View>
-            {error && <Text style={styles.error}>{error}</Text>}
-            <Button label="Salvar" onPress={save} loading={loading} />
-            <Button label="Cancelar" onPress={cancelEdit} variant="ghost" />
+            {error ? <Text style={styles.error}>{error}</Text> : null}
+            <Button label="Salvar"   onPress={save}       loading={loading} variant="cyan" />
+            <Button label="Cancelar" onPress={cancelEdit}                   variant="ghost" />
           </View>
         )}
 
+        {/* About */}
         <View style={styles.aboutSection}>
           <Text style={styles.aboutTitle}>Sobre</Text>
           <Text style={styles.aboutText}>
@@ -107,6 +120,7 @@ export function ProfileScreen() {
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
   content: { padding: spacing.lg, gap: spacing.lg },
+  title: { ...typography.h1 },
   heroCard: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
@@ -117,8 +131,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  nick: { color: colors.primary, fontSize: 14, marginTop: 2 },
-  favLabel: { color: colors.textSecondary, fontSize: 12, marginTop: 4 },
+  heroName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    fontFamily: fonts.display,
+  },
+  heroNick: { color: colors.gold, fontSize: 14, marginTop: 2 },
+  favBadge: {
+    marginTop: spacing.sm,
+    alignSelf: 'flex-start',
+    backgroundColor: colors.gold + '22',
+    borderRadius: radius.full,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderWidth: 1,
+    borderColor: colors.gold,
+  },
+  favBadgeText: { color: colors.gold, fontSize: 11, fontWeight: '700' },
   section: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
@@ -127,7 +157,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
-  fieldLabel: { ...typography.label, textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: spacing.xs },
+  fieldLabel: {
+    ...typography.label,
+    marginBottom: spacing.xs,
+  },
   error: { color: colors.danger, fontSize: 13 },
   aboutSection: {
     backgroundColor: colors.surface,

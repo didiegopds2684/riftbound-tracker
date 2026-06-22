@@ -1,0 +1,13 @@
+import { CSSProperties } from 'react';
+
+export type GameResult = 'win' | 'loss' | 'draw';
+
+/**
+ * Pill badge for a match result — Vitória (green), Derrota (red), Empate (grey).
+ */
+export interface ResultBadgeProps {
+  result: GameResult;
+  style?: CSSProperties;
+}
+
+export function ResultBadge(props: ResultBadgeProps): JSX.Element;

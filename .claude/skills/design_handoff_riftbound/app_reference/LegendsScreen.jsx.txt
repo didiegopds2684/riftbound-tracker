@@ -1,0 +1,64 @@
+// Legends list — tap a Legend to open Champion Detail (§5.2).
+(function () {
+const { LegendAvatar, Badge } = window.RiftboundTrackerDesignSystem_994af1;
+
+function LegendsScreen({ onOpen }) {
+  const { MATCHES, byId, PROFILE } = window.RBData;
+  const [search, setSearch] = React.useState('');
+
+  // aggregate per-legend record from matches
+  const stats = React.useMemo(() => {
+    const map = new Map();
+    for (const m of MATCHES) {
+      const p = map.get(m.my_legend_id) ?? { wins: 0, losses: 0, draws: 0 };
+      if (m.final_result === 'win') p.wins++;
+      else if (m.final_result === 'loss') p.losses++;
+      else p.draws++;
+      map.set(m.my_legend_id, p);
+    }
+    const arr = [...map.entries()].map(([id, s]) => {
+      const total = s.wins + s.losses + s.draws;
+      return { legend: byId[id], ...s, total, winRate: total ? (s.wins / total) * 100 : 0 };
+    });
+    const max = Math.max(...arr.map((s) => s.total), 0);
+    return arr.map((s) => ({ ...s, mostPlayed: s.total === max })).sort((a, b) => b.total - a.total);
+  }, []);
+
+  const filtered = stats.filter((s) => s.legend.name.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <h1 style={{ fontFamily: 'var(--font-display)', fontSize: 26, fontWeight: 700, letterSpacing: 'var(--ls-display)', padding: 'var(--sp-lg) var(--sp-lg) var(--sp-sm)' }}>Legends</h1>
+      <div style={{ padding: '0 var(--sp-md) var(--sp-sm)' }}>
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar Legend..."
+          style={{ width: '100%', padding: 'var(--sp-md)', borderRadius: 'var(--r-md)', background: 'var(--surface-elevated)', border: '1px solid var(--border)', color: 'var(--text-primary)', fontSize: 15 }} />
+      </div>
+      <div style={{ flex: 1, overflowY: 'auto', padding: 'var(--sp-md)', paddingTop: 0, display: 'flex', flexDirection: 'column', gap: 'var(--sp-sm)' }}>
+        {filtered.map((item) => (
+          <button key={item.legend.id} onClick={() => onOpen(item.legend.id)} style={{
+            background: 'var(--surface)', borderRadius: 'var(--r-md)', padding: 'var(--sp-md)',
+            border: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 'var(--sp-md)', textAlign: 'left', width: '100%',
+          }}>
+            <LegendAvatar legend={item.legend} size={52} favorite={item.legend.id === PROFILE.favorite_legend_id} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                <span style={{ fontWeight: 600, fontSize: 15 }}>{item.legend.name}</span>
+                {item.mostPlayed && <Badge label="Mais jogada" tone="gold" />}
+              </div>
+              <span style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
+                {item.wins}V / {item.losses}D / {item.draws}E · {item.total} partidas
+              </span>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: item.winRate >= 50 ? 'var(--win)' : 'var(--loss)' }}>{Math.round(item.winRate)}%</div>
+              <div style={{ fontSize: 10, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: 'var(--ls-overline)' }}>winrate</div>
+            </div>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+Object.assign(window, { LegendsScreen });
+})();

@@ -9,7 +9,7 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../hooks/useAuth';
-import { colors, radius, spacing, typography } from '../lib/theme';
+import { colors, fonts, radius, spacing, typography } from '../lib/theme';
 import { Button } from '../components/Button';
 import { FormField } from '../components/FormField';
 
@@ -64,14 +64,16 @@ export function AuthScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+        {/* Brand header */}
         <View style={styles.header}>
           <Text style={styles.logo}>⚔</Text>
           <Text style={styles.appName}>Riftbound Tracker</Text>
           <Text style={styles.appSub}>Diário de partidas pessoal</Text>
         </View>
 
+        {/* Auth card */}
         <View style={styles.card}>
-          <Text style={typography.h2}>{title}</Text>
+          <Text style={styles.cardTitle}>{title}</Text>
 
           {mode === 'register' && (
             <>
@@ -111,10 +113,10 @@ export function AuthScreen() {
             />
           )}
 
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error   && <Text style={styles.error}>{error}</Text>}
           {message && <Text style={styles.success}>{message}</Text>}
 
-          <Button label={title} onPress={handleSubmit} loading={loading} />
+          <Button label={title} onPress={handleSubmit} loading={loading} variant="cyan" />
 
           <View style={styles.links}>
             {mode === 'login' && (
@@ -146,11 +148,33 @@ export function AuthScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: colors.background },
-  scroll: { flexGrow: 1, justifyContent: 'center', padding: spacing.lg },
-  header: { alignItems: 'center', marginBottom: spacing.xxl },
-  logo: { fontSize: 56 },
-  appName: { ...typography.h1, marginTop: spacing.sm, color: colors.primary },
-  appSub: { ...typography.bodySmall, marginTop: spacing.xs },
+  scroll: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    padding: spacing.lg,
+    gap: spacing.xl,
+  },
+  header: { alignItems: 'center' },
+  logo: {
+    fontSize: 54,
+    color: colors.gold,
+    textShadowColor: '#c89b3c55',
+    textShadowOffset: { width: 0, height: 0 },
+    textShadowRadius: 18,
+  },
+  appName: {
+    fontSize: 26,
+    fontWeight: '700',
+    color: colors.gold,
+    letterSpacing: 0.8,
+    fontFamily: fonts.display,
+    marginTop: spacing.sm,
+  },
+  appSub: {
+    fontSize: 13,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
@@ -159,15 +183,24 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
   },
+  cardTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: colors.textPrimary,
+  },
   error: { color: colors.danger, fontSize: 13, textAlign: 'center' },
   success: { color: colors.success, fontSize: 13, textAlign: 'center' },
-  links: { flexDirection: 'row', justifyContent: 'space-between', flexWrap: 'wrap', gap: spacing.sm },
-  link: { color: colors.primary, fontSize: 14 },
+  links: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  link: { color: colors.gold, fontSize: 14 },
   disclaimer: {
     color: colors.textMuted,
     fontSize: 11,
     textAlign: 'center',
-    marginTop: spacing.xl,
-    lineHeight: 16,
+    lineHeight: 17,
   },
 });
