@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -12,6 +11,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../hooks/useAuth';
 import { useChampions } from '../hooks/useChampions';
 import { colors, fonts, radius, spacing, typography } from '../lib/theme';
+import { useBreakpoint } from '../lib/useBreakpoint';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { Button } from '../components/Button';
 import { ChampionPicker } from '../components/ChampionPicker';
 import { ChampionAvatar } from '../components/ChampionAvatar';
@@ -25,8 +26,10 @@ export function ProfileScreen() {
   const [name, setName]       = useState(profile?.name ?? '');
   const [nickname, setNick]   = useState(profile?.nickname ?? '');
   const [favChamp, setFav]    = useState(profile?.favorite_champion_id ?? null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError]     = useState<string | null>(null);
+  const [loading, setLoading]         = useState(false);
+  const [error, setError]             = useState<string | null>(null);
+  const [confirmSignOut, setConfirmSignOut] = useState(false);
+  const { isDesktop } = useBreakpoint();
 
   const favoriteChampion = champions.find((c) => c.id === (profile?.favorite_champion_id ?? ''));
 
@@ -47,16 +50,26 @@ export function ProfileScreen() {
     setError(null);
   }
 
-  function confirmSignOut() {
-    Alert.alert('Sair', 'Deseja encerrar a sessão?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Sair', style: 'destructive', onPress: signOut },
-    ]);
-  }
-
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <ScrollView style={styles.root} contentContainerStyle={[styles.content, { paddingTop: insets.top + spacing.sm }]}>
+      <ConfirmModal
+        visible={confirmSignOut}
+        title="Encerrar sessão"
+        message="Você será desconectado da sua conta."
+        confirmLabel="Sair"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={() => { setConfirmSignOut(false); signOut(); }}
+        onCancel={() => setConfirmSignOut(false)}
+      />
+      <ScrollView
+        style={styles.root}
+        contentContainerStyle={[
+          styles.content,
+          { paddingTop: insets.top + spacing.sm },
+          isDesktop && { maxWidth: 600, width: '100%', alignSelf: 'center' },
+        ]}
+      >
         <Text style={styles.title}>Perfil</Text>
 
         {/* Identity card */}
@@ -81,7 +94,7 @@ export function ProfileScreen() {
         {!editing ? (
           <View style={styles.section}>
             <Button label="Editar perfil" onPress={() => setEditing(true)} variant="secondary" />
-            <Button label="Sair"          onPress={confirmSignOut}          variant="danger" />
+            <Button label="Sair"          onPress={() => setConfirmSignOut(true)} variant="danger" />
           </View>
         ) : (
           <View style={styles.section}>

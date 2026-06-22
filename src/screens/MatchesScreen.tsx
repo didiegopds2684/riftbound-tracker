@@ -1,7 +1,7 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
-  Platform,
+  Animated,
   Pressable,
   SectionList,
   ScrollView,
@@ -16,6 +16,9 @@ import { colors, fonts, radius, spacing, typography } from '../lib/theme';
 import { Champion, Match, MatchFormat, MatchMode, TournamentType, TOURNAMENT_LABELS } from '../types';
 import { ChampionAvatar } from '../components/ChampionAvatar';
 import { Button } from '../components/Button';
+import { ConfirmModal } from '../components/ConfirmModal';
+import { PageContainer } from '../components/PageContainer';
+import { useBreakpoint } from '../lib/useBreakpoint';
 import { NewMatchScreen } from './NewMatchScreen';
 
 // ── Match card (portrait, fixed width for horizontal scroll) ─────────────────
@@ -36,23 +39,24 @@ function MatchCard({
 
   const resultColor = colors[match.final_result];
   const resultLabel = { win: 'VITÓRIA', loss: 'DERROTA', draw: 'EMPATE' }[match.final_result];
-
-  function confirmDelete() {
-    if (Platform.OS === 'web') {
-      // eslint-disable-next-line no-alert
-      if (window.confirm('Deseja remover esta partida?')) onDelete();
-      return;
-    }
-    Alert.alert('Remover partida', 'Deseja remover esta partida?', [
-      { text: 'Cancelar', style: 'cancel' },
-      { text: 'Remover', style: 'destructive', onPress: onDelete },
-    ]);
-  }
+  const resultBg    = resultColor + '12';
+  const [confirming, setConfirming] = useState(false);
 
   return (
-    <View style={card.container}>
+    <View style={[card.container, { borderTopColor: resultColor, backgroundColor: resultBg }]}>
+      <ConfirmModal
+        visible={confirming}
+        title="Remover partida"
+        message="Esta ação não pode ser desfeita."
+        confirmLabel="Remover"
+        cancelLabel="Cancelar"
+        variant="danger"
+        onConfirm={() => { setConfirming(false); onDelete(); }}
+        onCancel={() => setConfirming(false)}
+      />
+
       {/* Visible delete button */}
-      <Pressable style={card.deleteBtn} onPress={confirmDelete} hitSlop={8}>
+      <Pressable style={card.deleteBtn} onPress={() => setConfirming(true)} hitSlop={8}>
         <Text style={card.deleteTxt}>✕</Text>
       </Pressable>
 
@@ -68,8 +72,10 @@ function MatchCard({
 
       {/* Score + result — center */}
       <View style={card.scoreBlock}>
-        <Text style={card.score}>{match.score_summary}</Text>
-        <Text style={[card.result, { color: resultColor }]}>{resultLabel}</Text>
+        <Text style={[card.score, { textShadowColor: resultColor + '55' }]}>{match.score_summary}</Text>
+        <View style={[card.resultPill, { backgroundColor: resultColor + '22', borderColor: resultColor + '66' }]}>
+          <Text style={[card.result, { color: resultColor }]}>{resultLabel}</Text>
+        </View>
         <Text style={card.meta}>{match.mode.toUpperCase()} · {match.match_format.toUpperCase()}</Text>
       </View>
 
@@ -180,11 +186,39 @@ interface NewMatchConfig {
 
 // ── Main screen ───────────────────────────────────────────────────────────────
 
+const DRAWER_WIDTH = 420;
+
 export function MatchesScreen() {
   const insets = useSafeAreaInsets();
-  const { matches, loading, deleteMatch } = useMatches();
+  const { isDesktop } = useBreakpoint();
+  const { matches, loading, deleteMatch, reload } = useMatches();
   const { findById } = useChampions();
   const [newConfig, setNewConfig] = useState<NewMatchConfig | null>(null);
+
+  // Keeps the last config alive while the drawer slides out
+  const lastConfig = useRef<NewMatchConfig | null>(null);
+  if (newConfig) lastConfig.current = newConfig;
+
+  const drawerX = useRef(new Animated.Value(DRAWER_WIDTH)).current;
+  const backdropOpacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!isDesktop) return;
+    const open = newConfig !== null;
+    Animated.parallel([
+      Animated.spring(drawerX, {
+        toValue: open ? 0 : DRAWER_WIDTH,
+        useNativeDriver: false,
+        tension: 80,
+        friction: 14,
+      }),
+      Animated.timing(backdropOpacity, {
+        toValue: open ? 1 : 0,
+        duration: 200,
+        useNativeDriver: false,
+      }),
+    ]).start();
+  }, [newConfig, isDesktop]);
 
   // Group by date; each section has one "row" item (the full day's array)
   const sections: Section[] = useMemo(() => {
@@ -215,13 +249,15 @@ export function MatchesScreen() {
 
   async function handleDelete(id: string) {
     const err = await deleteMatch(id);
-    if (err) Alert.alert('Erro ao remover', err);
+    if (err) console.error('deleteMatch:', err);
   }
 
-  if (newConfig) {
+  // Mobile: full-screen replacement
+  if (!isDesktop && newConfig) {
     return (
       <NewMatchScreen
         onDone={() => setNewConfig(null)}
+        onMatchSaved={reload}
         initialDate={newConfig.date}
         initialMode={newConfig.mode}
         initialFormat={newConfig.format}
@@ -230,8 +266,8 @@ export function MatchesScreen() {
     );
   }
 
-  return (
-    <View style={styles.root}>
+  const listContent = (
+    <>
       <View style={[styles.topBar, { paddingTop: insets.top + spacing.sm }]}>
         <Text style={styles.title}>Partidas</Text>
         <Button label="+ Nova" onPress={openNewDefault} style={styles.newBtn} />
@@ -266,6 +302,44 @@ export function MatchesScreen() {
           SectionSeparatorComponent={() => <View style={{ height: spacing.lg }} />}
         />
       )}
+    </>
+  );
+
+  return (
+    <View style={styles.root}>
+      <PageContainer>{listContent}</PageContainer>
+
+      {/* Desktop drawer */}
+      {isDesktop && (
+        <>
+          <Animated.View
+            pointerEvents={newConfig ? 'auto' : 'none'}
+            style={[styles.backdrop, { opacity: backdropOpacity }]}
+          >
+            <Pressable style={StyleSheet.absoluteFill} onPress={() => setNewConfig(null)} />
+          </Animated.View>
+
+          <Animated.View style={[styles.drawer, { transform: [{ translateX: drawerX }] }]}>
+            <View style={styles.drawerHeader}>
+              <Text style={styles.drawerTitle}>Nova Partida</Text>
+              <Pressable onPress={() => setNewConfig(null)} hitSlop={12}>
+                <Text style={styles.drawerClose}>✕</Text>
+              </Pressable>
+            </View>
+            {lastConfig.current && (
+              <NewMatchScreen
+                compact
+                onDone={() => setNewConfig(null)}
+                onMatchSaved={reload}
+                initialDate={lastConfig.current.date}
+                initialMode={lastConfig.current.mode}
+                initialFormat={lastConfig.current.format}
+                initialTournament={lastConfig.current.tournament}
+              />
+            )}
+          </Animated.View>
+        </>
+      )}
     </View>
   );
 }
@@ -275,14 +349,15 @@ export function MatchesScreen() {
 const card = StyleSheet.create({
   container: {
     width: CARD_WIDTH,
-    backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
+    borderTopWidth: 3,
     padding: spacing.sm,
-    paddingTop: spacing.md,  // extra room for delete button
+    paddingTop: spacing.md,
     alignItems: 'center',
     gap: spacing.xs,
+    overflow: 'hidden',
   },
   deleteBtn: {
     position: 'absolute',
@@ -320,7 +395,13 @@ const card = StyleSheet.create({
     fontFamily: fonts.display,
     letterSpacing: 0.8,
   },
-  result: { fontSize: 10, fontWeight: '700', letterSpacing: 1 },
+  resultPill: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: radius.full,
+    borderWidth: 1,
+  },
+  result: { fontSize: 9, fontWeight: '700', letterSpacing: 1 },
   meta:   { fontSize: 9, color: colors.textMuted, letterSpacing: 0.6 },
 });
 
@@ -365,7 +446,7 @@ const day = StyleSheet.create({
 });
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.background },
+  root: { flex: 1, backgroundColor: colors.background, overflow: 'hidden' },
   topBar: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -381,5 +462,47 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 22,
     fontSize: 15,
+  },
+  backdrop: {
+    position: 'absolute',
+    top: 0, left: 0, right: 0, bottom: 0,
+    backgroundColor: 'rgba(1,10,21,0.6)',
+    zIndex: 10,
+  },
+  drawer: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    bottom: 0,
+    width: DRAWER_WIDTH,
+    backgroundColor: colors.surface,
+    borderLeftWidth: 1,
+    borderLeftColor: colors.borderStrong,
+    zIndex: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: -4, height: 0 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
+  },
+  drawerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  drawerTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    letterSpacing: 0.4,
+  },
+  drawerClose: {
+    color: colors.textMuted,
+    fontSize: 16,
+    fontWeight: '700',
   },
 });

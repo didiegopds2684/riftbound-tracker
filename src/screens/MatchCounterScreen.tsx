@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, fonts, radius, spacing } from '../lib/theme';
+import { useBreakpoint } from '../lib/useBreakpoint';
 import { MatchFormat, MatchMode } from '../types';
 import { Button } from '../components/Button';
 
@@ -135,6 +136,7 @@ function Overlay({ children }: { children: React.ReactNode }) {
 // ── Main screen ──────────────────────────────────────────────────────────────
 export function MatchCounterScreen() {
   const insets = useSafeAreaInsets();
+  const { isDesktop } = useBreakpoint();
   const [setup, setSetup]       = useState(true);
   const [format, setFormat]     = useState<MatchFormat>('bo3');
   const [winTarget, setWinTarget] = useState(20);
@@ -185,9 +187,9 @@ export function MatchCounterScreen() {
   // ── SETUP ──────────────────────────────────────────────────────────────────
   if (setup) {
     return (
-      <View style={[styles.root, { paddingTop: insets.top }]}>
-        <Text style={styles.setupTitle}>Placar</Text>
-        <View style={styles.setupCard}>
+      <View style={[styles.root, { paddingTop: insets.top, alignItems: isDesktop ? 'center' : undefined, justifyContent: isDesktop ? 'center' : undefined }]}>
+        <Text style={[styles.setupTitle, isDesktop && { textAlign: 'center' }]}>Placar</Text>
+        <View style={[styles.setupCard, isDesktop && { width: 480 }]}>
           <Text style={styles.setupSubtitle}>Configurar partida</Text>
 
           <View style={seg.field}>

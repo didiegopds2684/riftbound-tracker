@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { View } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Text, View } from 'react-native';
+import { Text } from 'react-native';
 import { colors, fonts } from '../lib/theme';
+import { useBreakpoint } from '../lib/useBreakpoint';
+import { WebSidebar, TabName } from '../components/WebSidebar';
 import { MatchCounterScreen } from '../screens/MatchCounterScreen';
 import { MatchesScreen } from '../screens/MatchesScreen';
 import { ChampionsScreen } from '../screens/ChampionsScreen';
@@ -17,7 +20,30 @@ const ICONS: Record<string, string> = {
   Perfil:   '👤',
 };
 
-export function AppNavigator() {
+const SCREENS: Record<TabName, React.ComponentType> = {
+  Jogar:    MatchCounterScreen,
+  Partidas: MatchesScreen,
+  Legends:  ChampionsScreen,
+  Perfil:   ProfileScreen,
+};
+
+// ── Desktop web layout: sidebar + full-height content area ────────────────────
+function WebLayout() {
+  const [active, setActive] = useState<TabName>('Jogar');
+  const Screen = SCREENS[active];
+
+  return (
+    <View style={{ flex: 1, flexDirection: 'row', backgroundColor: colors.background }}>
+      <WebSidebar active={active} onNavigate={setActive} />
+      <View style={{ flex: 1, overflow: 'hidden' }}>
+        <Screen />
+      </View>
+    </View>
+  );
+}
+
+// ── Mobile: standard bottom tab navigator ────────────────────────────────────
+function MobileLayout() {
   return (
     <NavigationContainer>
       <Tab.Navigator
@@ -27,7 +53,6 @@ export function AppNavigator() {
               <Text
                 style={{
                   fontSize: focused ? 21 : 18,
-                  // cyan shadow glow on active icon
                   textShadowColor: focused ? colors.cyan : 'transparent',
                   textShadowOffset: { width: 0, height: 0 },
                   textShadowRadius: focused ? 8 : 0,
@@ -61,4 +86,10 @@ export function AppNavigator() {
       </Tab.Navigator>
     </NavigationContainer>
   );
+}
+
+// ── Root: pick layout based on screen width ───────────────────────────────────
+export function AppNavigator() {
+  const { isDesktop } = useBreakpoint();
+  return isDesktop ? <WebLayout /> : <MobileLayout />;
 }

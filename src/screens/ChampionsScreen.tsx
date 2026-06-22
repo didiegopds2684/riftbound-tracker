@@ -19,6 +19,7 @@ import { colors, fonts, radius, spacing, typography } from '../lib/theme';
 import { ChampionAvatar } from '../components/ChampionAvatar';
 import { KpiCard } from '../components/KpiCard';
 import { MatchupBar } from '../components/MatchupBar';
+import { PageContainer } from '../components/PageContainer';
 import { Champion, ChampionStats } from '../types';
 
 const DOMAIN_COLORS: Record<string, string> = {
@@ -287,68 +288,70 @@ export function ChampionsScreen() {
 
   return (
     <View style={[styles.root, { paddingTop: insets.top }]}>
-      <Text style={styles.title}>Legends</Text>
+      <PageContainer>
+        <Text style={styles.title}>Legends</Text>
 
-      {loading ? (
-        <ActivityIndicator color={colors.cyan} style={{ marginTop: spacing.xl }} />
-      ) : allStats.length === 0 ? (
-        <View style={styles.empty}>
-          <Text style={styles.emptyText}>
-            Nenhuma Legend registrada ainda.{'\n'}Registre sua primeira partida!
-          </Text>
-        </View>
-      ) : (
-        <>
-          <TextInput
-            style={styles.search}
-            placeholder="Buscar Legend..."
-            placeholderTextColor={colors.textMuted}
-            value={search}
-            onChangeText={setSearch}
-          />
-          <FlatList
-            data={filtered}
-            keyExtractor={(item) => item.champion.id}
-            contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}
-            renderItem={({ item }) => (
-              <Pressable
-                style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-                onPress={() => setSelected(item)}
-              >
-                <ChampionAvatar
-                  champion={item.champion}
-                  size={52}
-                  favorite={item.champion.id === profile?.favorite_champion_id}
-                />
-                <View style={{ flex: 1 }}>
-                  <View style={styles.nameRow}>
-                    <Text style={styles.name}>{item.champion.name}</Text>
-                    {item.isMostPlayed && (
-                      <View style={styles.badge}>
-                        <Text style={styles.badgeText}>Mais jogada</Text>
-                      </View>
-                    )}
+        {loading ? (
+          <ActivityIndicator color={colors.cyan} style={{ marginTop: spacing.xl }} />
+        ) : allStats.length === 0 ? (
+          <View style={styles.empty}>
+            <Text style={styles.emptyText}>
+              Nenhuma Legend registrada ainda.{'\n'}Registre sua primeira partida!
+            </Text>
+          </View>
+        ) : (
+          <>
+            <TextInput
+              style={styles.search}
+              placeholder="Buscar Legend..."
+              placeholderTextColor={colors.textMuted}
+              value={search}
+              onChangeText={setSearch}
+            />
+            <FlatList
+              data={filtered}
+              keyExtractor={(item) => item.champion.id}
+              contentContainerStyle={{ padding: spacing.md, gap: spacing.sm }}
+              renderItem={({ item }) => (
+                <Pressable
+                  style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+                  onPress={() => setSelected(item)}
+                >
+                  <ChampionAvatar
+                    champion={item.champion}
+                    size={52}
+                    favorite={item.champion.id === profile?.favorite_champion_id}
+                  />
+                  <View style={{ flex: 1 }}>
+                    <View style={styles.nameRow}>
+                      <Text style={styles.name}>{item.champion.name}</Text>
+                      {item.isMostPlayed && (
+                        <View style={styles.badge}>
+                          <Text style={styles.badgeText}>Mais jogada</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.sub}>
+                      {item.wins}V / {item.losses}D / {item.draws}E · {item.total} partidas
+                    </Text>
                   </View>
-                  <Text style={styles.sub}>
-                    {item.wins}V / {item.losses}D / {item.draws}E · {item.total} partidas
-                  </Text>
-                </View>
-                <View style={styles.wrBlock}>
-                  <Text
-                    style={[
-                      styles.wrText,
-                      { color: item.winRate >= 50 ? colors.win : colors.loss },
-                    ]}
-                  >
-                    {item.winRate.toFixed(0)}%
-                  </Text>
-                  <Text style={styles.wrLabel}>winrate</Text>
-                </View>
-              </Pressable>
-            )}
-          />
-        </>
-      )}
+                  <View style={styles.wrBlock}>
+                    <Text
+                      style={[
+                        styles.wrText,
+                        { color: item.winRate >= 50 ? colors.win : colors.loss },
+                      ]}
+                    >
+                      {item.winRate.toFixed(0)}%
+                    </Text>
+                    <Text style={styles.wrLabel}>winrate</Text>
+                  </View>
+                </Pressable>
+              )}
+            />
+          </>
+        )}
+      </PageContainer>
     </View>
   );
 }

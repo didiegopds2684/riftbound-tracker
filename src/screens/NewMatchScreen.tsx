@@ -91,18 +91,22 @@ const TOURNAMENT_OPTIONS = Object.entries(TOURNAMENT_LABELS).map(([value, label]
 
 interface NewMatchProps {
   onDone: () => void;
+  onMatchSaved?: () => void;
   initialDate?: Date;
   initialMode?: MatchMode;
   initialFormat?: MatchFormat;
   initialTournament?: TournamentType;
+  compact?: boolean;
 }
 
 export function NewMatchScreen({
   onDone,
+  onMatchSaved,
   initialDate,
   initialMode,
   initialFormat,
   initialTournament,
+  compact = false,
 }: NewMatchProps) {
   const insets = useSafeAreaInsets();
   const { createMatch }  = useMatches();
@@ -164,19 +168,21 @@ export function NewMatchScreen({
     const err = await createMatch(input);
     setLoading(false);
     if (err) { setError(err); return; }
+    onMatchSaved?.();
     onDone();
   }
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      {/* sticky header */}
-      <View style={[styles.topBar, { paddingTop: Math.max(spacing.lg, insets.top + spacing.xs) }]}>
-        <Pressable onPress={onDone}>
-          <Text style={styles.back}>← Cancelar</Text>
-        </Pressable>
-        <Text style={styles.topTitle}>Nova Partida</Text>
-        <View style={{ width: 80 }} />
-      </View>
+      {!compact && (
+        <View style={[styles.topBar, { paddingTop: Math.max(spacing.lg, insets.top + spacing.xs) }]}>
+          <Pressable onPress={onDone}>
+            <Text style={styles.back}>← Cancelar</Text>
+          </Pressable>
+          <Text style={styles.topTitle}>Nova Partida</Text>
+          <View style={{ width: 80 }} />
+        </View>
+      )}
 
       <ScrollView style={styles.root} contentContainerStyle={styles.content}>
         <View style={styles.section}>
@@ -200,14 +206,27 @@ export function NewMatchScreen({
         <View style={styles.section}>
           <View style={styles.field}>
             <Text style={styles.fieldLabel}>Data da partida</Text>
-            <Pressable style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
-              <Text style={styles.dateBtnIcon}>📅</Text>
-              <Text style={styles.dateBtnText}>
-                {dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
-              </Text>
-            </Pressable>
 
-            {/* Android: dialog nativo (abre direto) */}
+            {Platform.OS === 'web' ? (
+              <View style={styles.dateBtn}>
+                <Text style={styles.dateBtnIcon}>📅</Text>
+                {/* @ts-ignore — HTML input, web only */}
+                <input
+                  type="date"
+                  value={dateObj.toISOString().split('T')[0]}
+                  onChange={(e: any) => { if (e.target.value) setDateObj(new Date(e.target.value + 'T12:00:00')); }}
+                  style={{ background: 'none', border: 'none', color: '#f0e6d2', fontSize: 15, flex: 1, outline: 'none', cursor: 'pointer', fontFamily: 'inherit' }}
+                />
+              </View>
+            ) : (
+              <Pressable style={styles.dateBtn} onPress={() => setShowDatePicker(true)}>
+                <Text style={styles.dateBtnIcon}>📅</Text>
+                <Text style={styles.dateBtnText}>
+                  {dateObj.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                </Text>
+              </Pressable>
+            )}
+
             {showDatePicker && Platform.OS === 'android' && (
               <DateTimePicker
                 value={dateObj}
@@ -220,7 +239,6 @@ export function NewMatchScreen({
               />
             )}
 
-            {/* iOS: modal com spinner */}
             {Platform.OS === 'ios' && (
               <Modal
                 visible={showDatePicker}
