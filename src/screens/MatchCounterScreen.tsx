@@ -232,10 +232,10 @@ export function MatchCounterScreen() {
     <View style={styles.counter}>
       {/* Rune watermarks — each player's rune fills their own half */}
       <View style={[StyleSheet.absoluteFill, { bottom: '50%' }]}>
-        <Image source={rune2.source} style={styles.runeWatermark} resizeMode="contain" />
+        <Image source={rune2.source} style={styles.runeWatermark} resizeMode="cover" />
       </View>
       <View style={[StyleSheet.absoluteFill, { top: '50%' }]}>
-        <Image source={rune1.source} style={styles.runeWatermark} resizeMode="contain" />
+        <Image source={rune1.source} style={styles.runeWatermark} resizeMode="cover" />
       </View>
 
       {/* Opponent (top, rotated 180°) — topPad pushes content below Dynamic Island */}

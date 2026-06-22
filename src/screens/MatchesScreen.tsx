@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
   Alert,
+  Platform,
   Pressable,
   SectionList,
   ScrollView,
@@ -37,6 +38,11 @@ function MatchCard({
   const resultLabel = { win: 'VITÓRIA', loss: 'DERROTA', draw: 'EMPATE' }[match.final_result];
 
   function confirmDelete() {
+    if (Platform.OS === 'web') {
+      // eslint-disable-next-line no-alert
+      if (window.confirm('Deseja remover esta partida?')) onDelete();
+      return;
+    }
     Alert.alert('Remover partida', 'Deseja remover esta partida?', [
       { text: 'Cancelar', style: 'cancel' },
       { text: 'Remover', style: 'destructive', onPress: onDelete },
@@ -207,6 +213,11 @@ export function MatchesScreen() {
     setNewConfig({ date: new Date(), mode: '1v1', format: 'bo3', tournament: 'casual' });
   }
 
+  async function handleDelete(id: string) {
+    const err = await deleteMatch(id);
+    if (err) Alert.alert('Erro ao remover', err);
+  }
+
   if (newConfig) {
     return (
       <NewMatchScreen
@@ -249,7 +260,7 @@ export function MatchesScreen() {
             <DayRow
               matches={dayMatches}
               findChampion={findById}
-              onDelete={deleteMatch}
+              onDelete={handleDelete}
             />
           )}
           SectionSeparatorComponent={() => <View style={{ height: spacing.lg }} />}

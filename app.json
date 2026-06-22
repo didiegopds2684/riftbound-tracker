@@ -18,7 +18,17 @@
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro",
+      "output": "single",
+      "name": "Riftbound Tracker",
+      "shortName": "Riftbound",
+      "description": "Track your Riftbound TCG matches",
+      "themeColor": "#010a15",
+      "backgroundColor": "#010a15",
+      "lang": "pt-BR",
+      "scope": "/",
+      "startUrl": "/"
     },
     "plugins": [
       "expo-asset",
